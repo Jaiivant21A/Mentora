@@ -1,6 +1,6 @@
 // src/components/Navbar.jsx
-import { useEffect, useRef, useState } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from "react";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import {
   BotMessageSquare,
   Target,
@@ -8,11 +8,11 @@ import {
   GraduationCap,
   Mic,
   LogOut,
-  Settings as SettingsIcon
-} from 'lucide-react';
-import { clearSession, getRole } from '../services/session';
+  Settings as SettingsIcon,
+} from "lucide-react";
+import { clearSession, getRole } from "../services/session";
 
-const THEME_KEY = 'mentora-theme';
+const THEME_KEY = "mentora-theme";
 
 const Navbar = () => {
   const nav = useNavigate();
@@ -24,39 +24,47 @@ const Navbar = () => {
 
   // Apply saved theme once at startup (no visible toggle in UI)
   useEffect(() => {
-    const t = localStorage.getItem(THEME_KEY) || 'light';
-    document.documentElement.classList.toggle('dark', t === 'dark');
+    const t = localStorage.getItem(THEME_KEY) || "light";
+    document.documentElement.classList.toggle("dark", t === "dark");
   }, []); // Tailwind dark mode uses a .dark class on <html> when darkMode:'class' [1][5]
 
   useEffect(() => {
     const onClick = (e) => {
       if (!open) return;
-      if (menuRef.current?.contains(e.target) || btnRef.current?.contains(e.target)) return;
+      if (
+        menuRef.current?.contains(e.target) ||
+        btnRef.current?.contains(e.target)
+      )
+        return;
       setOpen(false);
     };
-    const onKey = (e) => { if (e.key === 'Escape') setOpen(false); };
-    window.addEventListener('click', onClick);
-    window.addEventListener('keydown', onKey);
+    const onKey = (e) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("click", onClick);
+    window.addEventListener("keydown", onKey);
     return () => {
-      window.removeEventListener('click', onClick);
-      window.removeEventListener('keydown', onKey);
+      window.removeEventListener("click", onClick);
+      window.removeEventListener("keydown", onKey);
     };
   }, [open]);
 
   const navLinkClass = ({ isActive }) =>
     `flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-      isActive ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+      isActive
+        ? "bg-primary text-white"
+        : "text-gray-600 hover:bg-gray-200 hover:text-gray-900"
     }`;
 
   const goSettings = () => {
     setOpen(false);
-    nav('/settings');
+    nav("/settings");
   };
 
   const signOut = () => {
     clearSession();
     setOpen(false);
-    nav('/auth', { replace: true });
+    nav("/auth", { replace: true });
   };
 
   return (
@@ -67,7 +75,9 @@ const Navbar = () => {
           <div className="flex-shrink-0">
             <Link to="/" className="flex items-center space-x-2">
               <BotMessageSquare className="h-8 w-8 text-primary" />
-              <span className="text-2xl font-bold text-gray-800 dark:text-gray-100">Mentora</span>
+              <span className="text-2xl font-bold text-gray-800 dark:text-gray-100">
+                Mentora
+              </span>
             </Link>
           </div>
 
@@ -93,11 +103,13 @@ const Navbar = () => {
 
           {/* Right: role + user dropdown */}
           <div className="relative flex items-center gap-3">
-            <span className="text-sm text-gray-600 dark:text-gray-300 hidden md:inline">Role: {role}</span>
+            <span className="text-sm text-gray-600 dark:text-gray-300 hidden md:inline">
+              Role: {role}
+            </span>
 
             <button
               ref={btnRef}
-              onClick={() => setOpen(v => !v)}
+              onClick={() => setOpen((v) => !v)}
               className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 outline-none focus:ring-2 focus:ring-primary"
               title="Account"
               aria-haspopup="menu"

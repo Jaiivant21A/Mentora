@@ -1,9 +1,9 @@
-import { GraduationCap } from 'lucide-react';
+import { GraduationCap } from "lucide-react";
 
 const platformColors = {
-  Coursera: 'bg-blue-100 text-blue-800',
-  Udemy: 'bg-purple-100 text-purple-800',
-  edX: 'bg-red-100 text-red-800',
+  Coursera: "bg-blue-100 text-blue-800",
+  Udemy: "bg-purple-100 text-purple-800",
+  edX: "bg-red-100 text-red-800",
 };
 
 const CourseCard = ({ course }) => {
@@ -14,7 +14,9 @@ const CourseCard = ({ course }) => {
         <div>
           <h4 className="font-bold text-gray-800">{course.title}</h4>
           <div className="flex items-center space-x-2 mt-2 text-sm">
-            <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${platformColors[course.platform]}`}>
+            <span
+              className={`px-2 py-0.5 rounded-full text-xs font-semibold ${platformColors[course.platform]}`}
+            >
               {course.platform}
             </span>
             <span className="text-gray-500">•</span>

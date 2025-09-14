@@ -1,4 +1,4 @@
-import { Target } from 'lucide-react';
+import { Target } from "lucide-react";
 
 const GoalTracker = ({ goal }) => {
   const { title, progress, deadline } = goal;
@@ -9,7 +9,9 @@ const GoalTracker = ({ goal }) => {
         <div>
           <div className="flex justify-between items-center mb-2">
             <h4 className="font-bold text-gray-800">{title}</h4>
-            <span className="text-sm font-semibold text-primary">{progress}%</span>
+            <span className="text-sm font-semibold text-primary">
+              {progress}%
+            </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2.5 mb-3">
             <div

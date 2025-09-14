@@ -1,5 +1,5 @@
 // src/components/PersonaCard.jsx
-import { Link } from 'react-router-dom';
+import { Link } from "react-router-dom";
 
 const PersonaCard = ({ persona }) => {
   if (!persona) return null;
@@ -13,8 +13,12 @@ const PersonaCard = ({ persona }) => {
           loading="lazy"
         />
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">{persona.name}</h3>
-          <p className="text-sm text-gray-600">{persona.field} • {persona.tagline}</p>
+          <h3 className="text-lg font-semibold text-gray-900">
+            {persona.name}
+          </h3>
+          <p className="text-sm text-gray-600">
+            {persona.field} • {persona.tagline}
+          </p>
         </div>
       </div>
 

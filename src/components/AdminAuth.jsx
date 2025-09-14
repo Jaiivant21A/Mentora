@@ -1,52 +1,100 @@
-const AdminAuth = ({ onSuccess }) => {
-  const [adminId, setAdminId] = useState('');
-  const [pwd, setPwd] = useState('');
+import React, { useState } from "react";
 
-  const handleAdminLogin = () => {
-    const idOk = ADMIN_ALLOWED.some(a => a.id === adminId.trim());
-    if (!idOk) return alert('Invalid Admin ID');
-    if (pwd !== ADMIN_PASSWORD) return alert('Invalid Admin password');
+/**
+ * AdminAuth
+ * Props:
+ * - adminAllowed: array of { id: string } allowed admin IDs
+ * - adminPassword: string shared admin password
+ * - onSetSession: function to persist session
+ * - navigate: function to change route (e.g., useNavigate)
+ * - from: redirect path after login (default "/")
+ * - onSuccess: optional callback after login
+ */
+export default function AdminAuth({
+  adminAllowed = [],
+  adminPassword = "",
+  onSetSession,
+  navigate,
+  from = "/",
+  onSuccess,
+}) {
+  const [adminId, setAdminId] = useState("");
+  const [pwd, setPwd] = useState("");
+  const [error, setError] = useState("");
 
-    // Save session with admin role and ID
-    setSession({ adminId: adminId.trim(), role: 'admin', ts: Date.now() });
-    onSuccess?.();
+  const handleAdminLogin = (e) => {
+    e?.preventDefault?.();
+    setError("");
+
+    const id = adminId.trim();
+    const idOk =
+      Array.isArray(adminAllowed) && adminAllowed.some((a) => a.id === id);
+    if (!idOk) {
+      setError("Invalid Admin ID");
+      return;
+    }
+    if (pwd !== adminPassword) {
+      setError("Invalid Admin password");
+      return;
+    }
+
+    const session = { adminId: id, role: "admin", ts: Date.now() };
+
+    if (typeof onSetSession === "function") onSetSession(session);
+    if (typeof onSuccess === "function") onSuccess();
+    if (typeof navigate === "function") navigate(from, { replace: true });
   };
-setSession({ adminId: adminId.trim(), role: 'admin', ts: Date.now() });
-nav(from, { replace: true }); // go to Home (or previously attempted page) [3][10]
 
   return (
-    <div>
-      <p className="text-sm text-gray-600 mb-3">
-        Enter a valid Admin ID and the shared Admin password.
-      </p>
+    <div className="mx-auto max-w-sm p-4">
+      <h2 className="text-xl font-semibold mb-3">Admin Login</h2>
 
-      <div className="mb-3">
-        <label className="block text-sm text-gray-600 mb-1">Admin ID</label>
-        <input
-          className="w-full border rounded-md px-3 py-2"
-          placeholder="e.g., MENTORA-ADMIN-0031"
-          value={adminId}
-          onChange={e=>setAdminId(e.target.value)}
-        />
-      </div>
+      <form onSubmit={handleAdminLogin} className="space-y-3">
+        <div>
+          <label htmlFor="admin-id" className="block text-sm text-gray-600 mb-1">
+            Admin ID
+          </label>
+          <input
+            id="admin-id"
+            className="w-full border rounded-md px-3 py-2"
+            placeholder="e.g., MENTORA-ADMIN-0031"
+            value={adminId}
+            onChange={(e) => setAdminId(e.target.value)}
+            autoComplete="username"
+          />
+        </div>
 
-      <div className="mb-4">
-        <label className="block text-sm text-gray-600 mb-1">Password</label>
-        <input
-          type="password"
-          className="w-full border rounded-md px-3 py-2"
-          placeholder="Enter admin password"
-          value={pwd}
-          onChange={e=>setPwd(e.target.value)}
-        />
-      </div>
+        <div>
+          <label
+            htmlFor="admin-pwd"
+            className="block text-sm text-gray-600 mb-1"
+          >
+            Password
+          </label>
+          <input
+            id="admin-pwd"
+            type="password"
+            className="w-full border rounded-md px-3 py-2"
+            placeholder="Enter admin password"
+            value={pwd}
+            onChange={(e) => setPwd(e.target.value)}
+            autoComplete="current-password"
+          />
+        </div>
 
-      <button
-        onClick={handleAdminLogin}
-        className="w-full bg-primary text-white px-4 py-2 rounded-md font-semibold"
-      >
-        Admin Sign In
-      </button>
+        {error ? (
+          <p className="text-sm text-red-600" role="alert">
+            {error}
+          </p>
+        ) : null}
+
+        <button
+          type="submit"
+          className="w-full bg-primary text-white px-4 py-2 rounded-md font-semibold"
+        >
+          Admin Sign In
+        </button>
+      </form>
 
       <div className="text-xs text-gray-500 mt-3">
         Allowed IDs:
@@ -58,4 +106,4 @@ nav(from, { replace: true }); // go to Home (or previously attempted page) [3][1
       </div>
     </div>
   );
-};
+}

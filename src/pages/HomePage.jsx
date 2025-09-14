@@ -1,6 +1,6 @@
 // src/pages/HomePage.jsx
-import { Link } from 'react-router-dom';
-import { BotMessageSquare, Target, GraduationCap, Mic } from 'lucide-react';
+import { Link } from "react-router-dom";
+import { BotMessageSquare, Target, GraduationCap, Mic } from "lucide-react";
 
 const HomePage = () => {
   return (
@@ -17,7 +17,9 @@ const HomePage = () => {
           Your AI Mentor for Every Career Goal
         </h1>
         <p className="mt-4 text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-          Get personalized guidance, practice for interviews, find the best courses, and achieve your professional ambitions with AI-powered personas.
+          Get personalized guidance, practice for interviews, find the best
+          courses, and achieve your professional ambitions with AI-powered
+          personas.
         </p>
         <Link
           to="/dashboard"
@@ -40,14 +42,16 @@ const HomePage = () => {
             <GraduationCap className="h-12 w-12 text-primary mx-auto mb-4" />
             <h3 className="text-xl font-bold mb-2">Find Courses</h3>
             <p className="text-gray-600 dark:text-gray-300">
-              Discover top courses from Coursera, edX, and Udemy tailored to you.
+              Discover top courses from Coursera, edX, and Udemy tailored to
+              you.
             </p>
           </div>
           <div>
             <Mic className="h-12 w-12 text-primary mx-auto mb-4" />
             <h3 className="text-xl font-bold mb-2">Mock Interviews</h3>
             <p className="text-gray-600 dark:text-gray-300">
-              Practice behavioral and technical interviews with an AI hiring manager.
+              Practice behavioral and technical interviews with an AI hiring
+              manager.
             </p>
           </div>
           <div>

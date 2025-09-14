@@ -1,5 +1,5 @@
-import { Navigate, useLocation } from 'react-router-dom';
-import { isAuthed } from '../services/session';
+import { Navigate, useLocation } from "react-router-dom";
+import { isAuthed } from "../services/session";
 
 const ProtectedRoute = ({ children }) => {
   const location = useLocation();
