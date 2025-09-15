@@ -1,41 +1,25 @@
-// src/components/PersonaCard.jsx
-import { Link } from "react-router-dom";
+// PersonaCard.jsx
+import React from 'react';
+import { Link } from 'react-router-dom';
 
-const PersonaCard = ({ persona }) => {
-  if (!persona) return null;
+export default function PersonaCard({ persona }) {
+  const { id, name, description, initial_prompt, image_url } = persona;
+
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md border hover:shadow-lg transition-shadow">
-      <div className="flex items-center gap-4">
-        <img
-          src={persona.avatar}
-          alt={persona.name}
-          className="h-12 w-12 rounded-full object-cover"
-          loading="lazy"
-        />
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900">
-            {persona.name}
-          </h3>
-          <p className="text-sm text-gray-600">
-            {persona.field} • {persona.tagline}
-          </p>
-        </div>
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+      <div className="flex items-center mb-4">
+        {image_url && (
+          <img src={image_url} alt={name} className="w-16 h-16 rounded-full mr-4" />
+        )}
+        <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">{name}</h3>
       </div>
-
-      <p className="text-gray-700 mt-3 line-clamp-3">{persona.bio}</p>
-
-      <div className="flex justify-between items-center mt-4">
-        <span className="text-xs text-gray-500">Tone: {persona.tone}</span>
-        <Link
-          className="text-primary font-semibold underline"
-          to={`/chat/${persona.id}`}
-          aria-label={`Open chat with ${persona.name}`}
-        >
-          Chat
-        </Link>
-      </div>
+      <p className="text-gray-600 dark:text-gray-300 mb-4">{description}</p>
+      <Link
+        to={`/interview/${id}?prompt=${encodeURIComponent(initial_prompt)}`}
+        className="text-primary font-semibold hover:underline"
+      >
+        Start Chat
+      </Link>
     </div>
   );
-};
-
-export default PersonaCard;
+}

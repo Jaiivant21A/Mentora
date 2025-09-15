@@ -1,74 +1,63 @@
-// src/pages/SettingsPage.jsx
-import { useEffect, useState } from "react";
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../Context/AuthContext'; // To handle signing out
 
+// Key for storing the theme choice in local storage.
 const THEME_KEY = "mentora-theme";
-const CLEAR_KEYS = [
-  "mentora-session",
-  "mentora-users",
-  "mentora-goals",
-  "mentora-interviews",
-  "mentora-goals-prefs",
-];
 
 export default function SettingsPage() {
-  const [theme, setTheme] = useState(() => localStorage.getItem(THEME_KEY) || "light");
+  const [theme, setTheme] = useState(() => localStorage.getItem(THEME_KEY) || "light");
+  const { signOut } = useAuth(); // Get the signOut function from our context
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    localStorage.setItem(THEME_KEY, theme);
-    document.documentElement.classList.toggle("dark", theme === "dark");
-  }, [theme]);
+  // Effect to apply the theme to the app.
+  useEffect(() => {
+    localStorage.setItem(THEME_KEY, theme);
+    document.documentElement.classList.toggle("dark", theme === "dark");
+  }, [theme]);
 
-  const clearAll = () => {
-    if (!confirm("Clear all local demo data and sign out?")) return;
-    CLEAR_KEYS.forEach((k) => localStorage.removeItem(k));
-    location.href = "/";
-  };
+  // Securely sign the user out and redirect them.
+  const handleSignOut = async () => {
+    if (confirm("Are you sure you want to sign out?")) {
+      await signOut();
+      navigate('/auth', { replace: true }); // Redirect to login page
+    }
+  };
 
-  return (
-    <div>
-      <h1 className="text-2xl font-bold mb-4">Settings</h1>
+  return (
+    <div className="p-6">
+      <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6">Settings</h1>
 
-      <section className="mb-6">
-        <h2 className="text-lg font-semibold mb-2">Theme</h2>
-        <div className="flex gap-2">
-          <button
-            className={`px-4 py-2 rounded-md border ${theme === "light" ? "bg-gray-100" : ""}`}
-            onClick={() => setTheme("light")}
-            aria-pressed={theme === "light"}
-          >
-            Light
-          </button>
-          <button
-            className={`px-4 py-2 rounded-md border ${theme === "dark" ? "bg-gray-800 text-white" : ""}`}
-            onClick={() => setTheme("dark")}
-            aria-pressed={theme === "dark"}
-          >
-            Dark
-          </button>
-          <button
-            className="px-4 py-2 rounded-md border"
-            onClick={() => setTheme("light")}
-          >
-            Reset
-          </button>
-        </div>
-        <p className="text-gray-600 text-sm mt-2">
-          Theme is saved locally and applied to the root element.
-        </p>
-      </section>
+      {/* --- About Us Section --- */}
+      <section className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">About Us</h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-2">
+          Mentora is a smart mentor application designed to help you prepare for technical interviews.
+          It offers a variety of AI personas, allowing you to simulate conversations and practice your
+          skills in a supportive, interactive environment.
+        </p>
+        <p className="text-gray-600 dark:text-gray-400">
+          Our goal is to make interview preparation accessible and effective for everyone, providing
+          you with the confidence to succeed.
+        </p>
+      </section>
 
-      <section>
-        <h2 className="text-lg font-semibold mb-2">Data</h2>
-        <button
-          onClick={clearAll}
-          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md"
-        >
-          Clear demo data
-        </button>
-        <p className="text-gray-600 text-sm mt-2">
-          Removes local users, session, goals, interviews and preferences.
-        </p>
-      </section>
-    </div>
-  );
+      {/* Horizontal Separator */}
+      <hr className="border-gray-200 dark:border-gray-700 my-8" />
+
+      {/* --- Account Section --- */}
+      <section>
+        <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">Account</h2>
+        <button
+          onClick={handleSignOut}
+          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md"
+        >
+          Sign Out
+        </button>
+        <p className="text-gray-600 dark:text-gray-400 text-sm mt-2">
+          This will end your current session and return you to the login page.
+        </p>
+      </section>
+    </div>
+  );
 }

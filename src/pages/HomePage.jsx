@@ -1,17 +1,41 @@
-// src/pages/HomePage.jsx
 import { Link } from "react-router-dom";
 import { BotMessageSquare, Target, GraduationCap, Mic } from "lucide-react";
+import { useAuth } from "../Context/AuthContext"; // To check login status
 
 const HomePage = () => {
+  // Get the current user from our authentication context.
+  const { user } = useAuth();
+
   return (
     <div className="bg-gray-50 dark:bg-gray-950 text-gray-800 dark:text-gray-100">
       <header className="container mx-auto px-4 py-4 flex justify-between items-center">
-        <div className="flex items-center space-x-2">
+        {/* App Logo */}
+        <Link to="/" className="flex items-center space-x-2">
           <BotMessageSquare className="h-8 w-8 text-primary" />
           <span className="text-2xl font-bold">Mentora</span>
+        </Link>
+
+        {/* Dynamic header button based on auth state */}
+        <div>
+          {user ? (
+            <Link
+              to="/dashboard"
+              className="bg-primary text-white font-semibold px-4 py-2 rounded-md hover:bg-indigo-700"
+            >
+              Go to Dashboard
+            </Link>
+          ) : (
+            <Link
+              to="/auth"
+              className="font-semibold px-4 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              Login / Sign Up
+            </Link>
+          )}
         </div>
       </header>
 
+      {/* Hero Section */}
       <main className="text-center py-20 md:py-32 px-4">
         <h1 className="text-4xl md:text-6xl font-extrabold text-gray-900 dark:text-gray-100 leading-tight">
           Your AI Mentor for Every Career Goal
@@ -29,6 +53,7 @@ const HomePage = () => {
         </Link>
       </main>
 
+      {/* Features Section */}
       <section className="bg-white dark:bg-gray-900 py-20">
         <div className="container mx-auto px-4 grid md:grid-cols-4 gap-10 text-center">
           <div>

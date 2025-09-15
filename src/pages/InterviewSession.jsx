@@ -1,141 +1,111 @@
-// src/pages/InterviewSession.jsx
-import { useEffect, useState, useCallback } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useSearchParams, useParams } from "react-router-dom";
+import { supabase } from '../lib/supabaseClient';
+import { useAuth } from '../Context/AuthContext';
 
-const STORE_KEY = "mentora-interviews";
-const loadAll = () => {
-  try {
-    const r = localStorage.getItem(STORE_KEY);
-    return r ? JSON.parse(r) : [];
-  } catch {
-    return [];
-  }
-};
-const saveAll = (arr) => localStorage.setItem(STORE_KEY, JSON.stringify(arr));
-
+// Keep the question bank as static data in the component.
 const BANK = {
-  behavioral: [
-    "Tell me about yourself (use STAR).",
-    "Describe a challenge you faced and how you handled it.",
-    "When did you lead a team? What was the outcome?",
-  ],
-  react: [
-    "Explain useEffect and its dependency array.",
-    "How would you manage global state in React?",
-    "What are keys in lists and why are they important?",
-  ],
-  system: [
-    "Design a URL shortener.",
-    "How would you scale a chat application?",
-    "Discuss caching layers and their trade-offs.",
-  ],
+  behavioral: ["Tell me about yourself.", "Describe a challenge you faced.", "When did you lead a team?"],
+  react: ["Explain useEffect.", "How would you manage global state?", "What are keys in lists?"],
+  system: ["Design a URL shortener.", "How would you scale a chat app?", "Discuss caching layers."],
 };
 
 export default function InterviewSession() {
+  const { sessionId } = useParams(); // Get the session ID from the URL.
   const [params] = useSearchParams();
   const type = params.get("type") || "behavioral";
   const questions = BANK[type] || BANK.behavioral;
-
+  
   const nav = useNavigate();
+  const [session, setSession] = useState(null); // Holds the entire session object from DB.
   const [answers, setAnswers] = useState(() => Array(questions.length).fill(""));
   const [idx, setIdx] = useState(0);
-  const [sessionId] = useState(() => crypto.randomUUID());
-  const [startedAt] = useState(() => Date.now());
+  const [loading, setLoading] = useState(true);
 
-  // Memoize autosave so it can be safely listed as a dependency in useEffect
-  const autosave = useCallback(() => {
-    const all = loadAll();
-    const rec = {
-      id: sessionId,
-      type,
-      startedAt,
-      answers,
-      completedAt: null,
-      updatedAt: Date.now(),
-    };
-    const i = all.findIndex((s) => s.id === sessionId);
-    const next = i >= 0 ? ((all[i] = rec), [...all]) : [rec, ...all];
-    saveAll(next);
-  }, [answers, sessionId, startedAt, type]);
-
+  // This useEffect fetches the session data from Supabase on page load.
   useEffect(() => {
-    autosave();
-  }, [autosave]); // include memoized function in deps per hooks rule
-
-  const finish = () => {
-    const all = loadAll();
-    const rec = {
-      id: sessionId,
-      type,
-      startedAt,
-      answers,
-      completedAt: Date.now(),
-      updatedAt: Date.now(),
+    const fetchSession = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('interview_sessions')
+        .select('*')
+        .eq('id', sessionId)
+        .single();
+      
+      if (error) {
+        console.error("Could not fetch session", error);
+        nav('/interviews'); // Go back if session not found
+      } else {
+        setSession(data);
+        // Load existing answers or initialize new ones.
+        setAnswers(data.answers || Array(questions.length).fill(""));
+      }
+      setLoading(false);
     };
-    const i = all.findIndex((s) => s.id === sessionId);
-    const next = i >= 0 ? ((all[i] = rec), [...all]) : [rec, ...all];
-    saveAll(next);
+    if (sessionId) fetchSession();
+  }, [sessionId, questions.length, nav]);
+
+  // Save progress to the database.
+  const saveProgress = useCallback(async (currentAnswers) => {
+    const { error } = await supabase
+      .from('interview_sessions')
+      .update({ answers: currentAnswers })
+      .eq('id', sessionId);
+    if (error) console.error("Autosave failed", error);
+  }, [sessionId]);
+
+  // Handle text changes and trigger save.
+  const handleAnswerChange = (e) => {
+    const newAnswers = [...answers];
+    newAnswers[idx] = e.target.value;
+    setAnswers(newAnswers);
+    saveProgress(newAnswers); // Autosave on change
+  };
+
+  // Mark the session as complete in the database.
+  const finish = async () => {
+    await saveProgress(answers); // Save final answers
+    const { error } = await supabase
+      .from('interview_sessions')
+      .update({ completed_at: new Date() })
+      .eq('id', sessionId);
+    if (error) console.error("Failed to finish session", error);
     nav("/interviews");
   };
 
+  // Delete the session from the database.
+  const deleteSession = async () => {
+    if (!confirm("Delete this session?")) return;
+    const { error } = await supabase.from('interview_sessions').delete().eq('id', sessionId);
+    if (error) console.error("Failed to delete session", error);
+    nav("/interviews");
+  };
+
+  if (loading) return <p>Loading session...</p>;
+
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-2">Interview: {type}</h1>
-      <p className="text-gray-600 mb-4">
-        Question {idx + 1} of {questions.length}
-      </p>
+      <h1 className="text-2xl font-bold mb-2 capitalize">Interview: {type}</h1>
+      <p className="text-gray-600 mb-4">Question {idx + 1} of {questions.length}</p>
 
-      <div className="bg-white border rounded-lg p-4 mb-4">
+      <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4 mb-4">
         <p className="font-semibold mb-2">{questions[idx]}</p>
         <textarea
-          className="w-full border rounded-md p-3 min-h-[140px]"
+          className="w-full border rounded-md p-3 min-h-[140px] dark:bg-gray-900"
           placeholder="Type your answer here..."
-          value={answers[idx]}
-          onChange={(e) => {
-            const next = answers.slice();
-            next[idx] = e.target.value;
-            setAnswers(next);
-          }}
+          value={answers[idx] || ""} // Ensure a blank space is shown
+          onChange={handleAnswerChange}
         />
       </div>
 
       <div className="flex gap-2">
-        <button
-          disabled={idx === 0}
-          onClick={() => setIdx((i) => i - 1)}
-          className="px-4 py-2 rounded-md border disabled:opacity-50"
-        >
-          Back
-        </button>
+        <button disabled={idx === 0} onClick={() => setIdx(i => i - 1)} className="px-4 py-2 rounded-md border disabled:opacity-50">Back</button>
         {idx < questions.length - 1 ? (
-          <button
-            onClick={() => setIdx((i) => i + 1)}
-            className="px-4 py-2 rounded-md bg-primary text-white"
-          >
-            Next
-          </button>
+          <button onClick={() => setIdx(i => i + 1)} className="px-4 py-2 rounded-md bg-primary text-white">Next</button>
         ) : (
-          <button
-            onClick={finish}
-            className="px-4 py-2 rounded-md bg-primary text-white"
-          >
-            Finish
-          </button>
+          <button onClick={finish} className="px-4 py-2 rounded-md bg-primary text-white">Finish</button>
         )}
-        <button onClick={autosave} className="ml-auto px-4 py-2 rounded-md border">
-          Save
-        </button>
-        <button
-          onClick={() => {
-            if (!confirm("Delete this session?")) return;
-            const all = loadAll().filter((s) => s.id !== sessionId);
-            saveAll(all);
-            nav("/interviews");
-          }}
-          className="px-4 py-2 rounded-md border text-red-600 border-red-300 hover:bg-red-50"
-        >
-          Delete
-        </button>
+        <button onClick={deleteSession} className="ml-auto px-4 py-2 rounded-md border text-red-600 border-red-300 hover:bg-red-50">Delete</button>
       </div>
     </div>
   );
