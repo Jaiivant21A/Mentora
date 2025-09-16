@@ -1,15 +1,45 @@
 import { Link } from "react-router-dom";
 import { BotMessageSquare, Target, GraduationCap, Mic } from "lucide-react";
-// The useAuth import is no longer needed since the header is removed.
-// import { useAuth } from "../Context/AuthContext";
+import { useAuth } from "../context/AuthContext";
 
 const HomePage = () => {
-    // The user check is no longer needed here since the header is removed.
-    // const { user } = useAuth();
+    const { user } = useAuth();
 
     return (
         <div className="bg-background text-text-base">
-            {/* The <header> component was removed from here. */}
+            <header className="bg-card shadow-sm">
+                <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+                    <div className="flex items-center space-x-2">
+                        <BotMessageSquare className="h-8 w-8 text-primary" />
+                        <span className="text-2xl font-bold">Mentora</span>
+                    </div>
+                    <nav className="flex items-center space-x-4">
+                        {user ? (
+                            <Link
+                                to="/dashboard"
+                                className="text-text-secondary hover:text-primary transition-colors"
+                            >
+                                Dashboard
+                            </Link>
+                        ) : (
+                            <>
+                                <Link
+                                    to="/auth"
+                                    className="text-text-secondary hover:text-primary transition-colors"
+                                >
+                                    Login
+                                </Link>
+                                <Link
+                                    to="/auth"
+                                    className="bg-primary text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors"
+                                >
+                                    Sign Up
+                                </Link>
+                            </>
+                        )}
+                    </nav>
+                </div>
+            </header>
 
             {/* Hero Section */}
             <main className="text-center py-20 md:py-32 px-4">

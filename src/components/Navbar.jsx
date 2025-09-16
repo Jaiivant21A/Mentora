@@ -10,7 +10,7 @@ import {
   Settings as SettingsIcon,
   ShieldCheck, // Import the ShieldCheck icon for Admin link
 } from "lucide-react";
-import { useAuth } from "../Context/AuthContext";
+import { useAuth } from "../context/AuthContext";
 
 // Key for storing the theme in local storage.
 const THEME_KEY = "mentora-theme";
