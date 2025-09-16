@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { BotMessageSquare } from "lucide-react";
-import { useAuth } from "../Context/AuthContext";
+import { useNavigate, Link } from "react-router-dom";
+import { BotMessageSquare, Home } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 // Main AuthPage Component
 const AuthPage = () => {
@@ -122,6 +122,12 @@ const AuthForm = () => {
                     </p>
                 </>
             )}
+            <p className="text-sm text-text-secondary mt-4 text-center">
+                <Link to="/" className="inline-flex items-center gap-1 hover:text-primary transition-colors">
+                    <Home size={14} />
+                    <span>Go back to Home</span>
+                </Link>
+            </p>
         </form>
     );
 };
