@@ -1,19 +1,14 @@
-import { Outlet } from "react-router-dom";
-import Navbar from "./Navbar";
+// src/components/Layout.jsx
 
-const Layout = () => {
+import { Outlet } from 'react-router-dom';
+
+export default function Layout() {
   return (
-    // Main container for the entire app layout.
-    <div className="min-h-screen bg-background">
-      {/* The navigation bar, always visible on protected pages. */}
-      <Navbar />
-
-      {/* The main content area that changes with the route. */}
-      <main className="container mx-auto px-4 py-8">
-        {/* Renders the current page's component (e.g., DashboardPage). */}
+    <div className="flex flex-col min-h-screen">
+      {/* This is a simple wrapper for all protected pages */}
+      <div className="container mx-auto p-6">
         <Outlet />
-      </main>
+      </div>
     </div>
   );
-};
-export default Layout;
+}

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { BotMessageSquare, User as UserIcon, ShieldCheck } from "lucide-react";
 import { useAuth } from "../Context/AuthContext";
-import { supabase } from '../lib/supabaseClient';
+// import { supabase } from '../lib/supabaseClient'; // No longer needed for this component
 
 // Main AuthPage Component
 const AuthPage = () => {
@@ -56,8 +56,11 @@ const AuthForm = () => {
         setIsSubmitting(true);
         setErr("");
         try {
+            // The `signUp` function now triggers the database function
+            // to create the profile, so no manual insert is needed here.
             const { error } = await signUp({ email, password: pwd });
             if (error) throw error;
+            
             alert("Success! Please check your email for a verification link.");
             setMode("signin");
         } catch (error) {

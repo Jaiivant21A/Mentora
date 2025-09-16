@@ -11,21 +11,30 @@ export function AuthProvider({ children }) {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    // This function handles the logic for a user session
-    const handleSession = async (session) => {
+    const fetchSession = async () => {
+      // First, get the current session immediately
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error("Error fetching session:", sessionError);
+        setLoading(false);
+        return;
+      }
+
       const currentUser = session?.user ?? null;
       setUser(currentUser);
 
       if (currentUser) {
         try {
-          const { data: profile, error } = await supabase
+          // Fetch the user's admin status
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('is_admin')
             .eq('id', currentUser.id)
             .single();
 
-          if (error) {
-            console.error('Error fetching admin status:', error);
+          if (profileError) {
+            console.error('Error fetching admin status:', profileError);
             setIsAdmin(false);
           } else {
             setIsAdmin(profile?.is_admin || false);
@@ -40,18 +49,36 @@ export function AuthProvider({ children }) {
       setLoading(false);
     };
 
-    // First, check for an existing session immediately
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      handleSession(session);
-    });
+    fetchSession();
 
-    // Then, listen for future auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      handleSession(session);
-    });
+    // Set up the listener for future auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
+        // Re-fetch admin status on sign-in or sign-out
+        if (currentUser) {
+          supabase
+            .from('profiles')
+            .select('is_admin')
+            .eq('id', currentUser.id)
+            .single()
+            .then(({ data: profile, error }) => {
+              if (error) {
+                console.error('Error fetching admin status on auth change:', error);
+                setIsAdmin(false);
+              } else {
+                setIsAdmin(profile?.is_admin || false);
+              }
+            });
+        } else {
+          setIsAdmin(false);
+        }
+      }
+    );
 
     return () => subscription.unsubscribe();
-  }, []); // Empty dependency array ensures this runs only once on mount
+  }, []); // The empty dependency array is correct here
 
   const signIn = async (credentials) => {
     const { data, error } = await supabase.auth.signInWithPassword(credentials);

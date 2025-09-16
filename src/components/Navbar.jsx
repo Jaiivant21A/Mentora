@@ -8,7 +8,7 @@ import {
   Mic,
   LogOut,
   Settings as SettingsIcon,
-  ShieldCheck, // Import the ShieldCheck icon for Admin link
+  ShieldCheck, // Import the ShieldCheck icon for the Admin link
 } from "lucide-react";
 import { useAuth } from "../Context/AuthContext";
 
@@ -17,7 +17,6 @@ const THEME_KEY = "mentora-theme";
 
 const Navbar = () => {
   const nav = useNavigate();
-  // Get user session, isAdmin, and logout function from our context.
   const { user, isAdmin, signOut: supabaseSignOut } = useAuth(); // Destructure isAdmin
 
   // State and refs for the user dropdown menu.
@@ -75,8 +74,7 @@ const Navbar = () => {
         <div className="flex justify-between items-center h-16">
           {/* Left Side: Logo and App Name */}
           <div className="flex-shrink-0">
-            {/* Change the 'to' prop to "/" */}
-            <Link to="/" className="flex items-center space-x-2"> 
+            <Link to="/" className="flex items-center space-x-2">
               <BotMessageSquare className="h-8 w-8 text-primary" />
               <span className="text-2xl font-bold text-gray-800 dark:text-gray-100">
                 Mentora
@@ -102,13 +100,7 @@ const Navbar = () => {
               <Target size={18} />
               <span>My Goals</span>
             </NavLink>
-            {/* Conditional Admin link */}
-            {isAdmin && (
-              <NavLink to="/admin" className={navLinkClass}>
-                <ShieldCheck size={18} />
-                <span>Admin</span>
-              </NavLink>
-            )}
+            {/* The conditional Admin link has been moved */}
           </div>
 
           {/* Right Side: User info and dropdown menu */}
@@ -143,6 +135,19 @@ const Navbar = () => {
                   <UserIcon size={16} />
                   <span>My Profile</span>
                 </Link>
+
+                {/* Conditional Admin link moved inside the dropdown */}
+                {isAdmin && (
+                  <Link
+                    to="/admin"
+                    onClick={() => setOpen(false)}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-100"
+                  >
+                    <ShieldCheck size={16} />
+                    <span>Admin</span>
+                  </Link>
+                )}
+                
                 <button
                   onClick={goSettings}
                   className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-100"
