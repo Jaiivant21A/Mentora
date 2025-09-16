@@ -30,7 +30,7 @@ const AdminPage = () => {
     }, []);
 
     if (loading) {
-        return <div className="p-6 text-center">Loading...</div>;
+        return <div className="p-6 text-center text-text-secondary">Loading...</div>;
     }
 
     if (error) {
@@ -38,40 +38,40 @@ const AdminPage = () => {
     }
 
     return (
-        <div className="container mx-auto p-6">
-            <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-gray-100">Admin Dashboard</h1>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
+        <div className="bg-background text-text-base min-h-screen container mx-auto p-6">
+            <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
+            <p className="text-text-secondary mb-4">
                 View and manage all user profiles in the system.
             </p>
 
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                    <thead className="bg-gray-50 dark:bg-gray-700">
+            <div className="bg-card rounded-lg shadow-md overflow-hidden border border-border">
+                <table className="min-w-full divide-y divide-border">
+                    <thead className="bg-background">
                         <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                                 Email
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                                 Full Name
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                                 Username
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                                 Admin
                             </th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    <tbody className="bg-card divide-y divide-border">
                         {users.map((user) => (
-                            <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+                            <tr key={user.id} className="hover:bg-background">
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-text-base">
                                     {user.email}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
                                     {user.full_name || 'N/A'}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
                                     {user.username || 'N/A'}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm">

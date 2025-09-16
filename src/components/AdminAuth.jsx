@@ -1,13 +1,12 @@
-// src/pages/AdminAuth.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from '../lib/supabaseClient'; // Import supabase
-import { useAuth } from "../Context/AuthContext"; // Import useAuth to access user
+import { supabase } from '../lib/supabaseClient';
+import { useAuth } from "../Context/AuthContext";
 import { ShieldCheck } from "lucide-react";
 
 const AdminAuth = () => {
   const nav = useNavigate();
-  const { user, signIn } = useAuth(); // Use the signIn function from AuthContext
+  const { user, signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [pwd, setPwd] = useState("");
   const [err, setErr] = useState("");
@@ -27,26 +26,20 @@ const AdminAuth = () => {
     setErr("");
 
     try {
-      // Step 1: Use Supabase to sign in the user.
       const { error: signInError } = await signIn({ email, password: pwd });
       if (signInError) throw signInError;
 
-      // The user is authenticated. Now we check if they are an admin.
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('is_admin')
-        .eq('id', user.id) // Use the user's ID to fetch their profile
+        .eq('id', user.id)
         .single();
       
       if (profileError) throw profileError;
 
-      // Step 2: Check the is_admin flag.
       if (profile.is_admin) {
-        // User is an admin, set their session or context state as needed.
-        // The useAuth hook should handle the redirect to dashboard.
         nav("/dashboard", { replace: true });
       } else {
-        // User is not an admin, sign them out and show an error.
         await supabase.auth.signOut();
         setErr("You do not have administrative privileges.");
       }
@@ -60,13 +53,13 @@ const AdminAuth = () => {
 
   return (
     <form onSubmit={submit}>
-      <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+      <p className="text-sm text-text-secondary mb-3">
         Enter your admin credentials to sign in.
       </p>
       <div className="mb-3">
-        <label className="block text-sm text-gray-600 dark:text-gray-300 mb-1">Email</label>
+        <label className="block text-sm text-text-secondary mb-1">Email</label>
         <input
-          className="w-full border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+          className="w-full border border-border rounded-md px-3 py-2 bg-background text-text-base"
           type="email"
           value={email}
           onChange={(e) => { setEmail(e.target.value); setErr(""); }}
@@ -74,10 +67,10 @@ const AdminAuth = () => {
         />
       </div>
       <div className="mb-4">
-        <label className="block text-sm text-gray-600 dark:text-gray-300 mb-1">Password</label>
+        <label className="block text-sm text-text-secondary mb-1">Password</label>
         <input
           type="password"
-          className="w-full border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+          className="w-full border border-border rounded-md px-3 py-2 bg-background text-text-base"
           value={pwd}
           onChange={(e) => { setPwd(e.target.value); setErr(""); }}
           required

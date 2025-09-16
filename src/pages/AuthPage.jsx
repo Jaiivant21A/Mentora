@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { BotMessageSquare, User as UserIcon, ShieldCheck } from "lucide-react";
+import { BotMessageSquare } from "lucide-react";
 import { useAuth } from "../Context/AuthContext";
-// import { supabase } from '../lib/supabaseClient'; // No longer needed for this component
 
 // Main AuthPage Component
 const AuthPage = () => {
@@ -21,11 +20,12 @@ const AuthPage = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 flex items-center justify-center px-4">
-            <div className="bg-white dark:bg-gray-900 w-full max-w-md border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-6">
+        // Corrected div to be a single, centered container
+        <div className="flex items-center justify-center min-h-screen">
+            <div className="bg-card w-full max-w-md border border-border rounded-xl shadow-sm p-6">
                 <div className="flex items-center gap-2 mb-6 justify-center">
                     <BotMessageSquare className="h-8 w-8 text-primary" />
-                    <h1 className="text-2xl font-bold">Mentora</h1>
+                    <h1 className="text-2xl font-bold text-text-base">Mentora</h1>
                 </div>
                 <AuthForm />
             </div>
@@ -56,8 +56,6 @@ const AuthForm = () => {
         setIsSubmitting(true);
         setErr("");
         try {
-            // The `signUp` function now triggers the database function
-            // to create the profile, so no manual insert is needed here.
             const { error } = await signUp({ email, password: pwd });
             if (error) throw error;
             
@@ -80,7 +78,6 @@ const AuthForm = () => {
         try {
             const { error } = await signIn({ email, password: pwd });
             if (error) throw error;
-            // The useEffect in AuthPage will handle the redirect on successful sign-in.
         } catch (error) {
             setErr(error.message);
         } finally {
@@ -91,19 +88,19 @@ const AuthForm = () => {
     return (
         <form onSubmit={submit} className="space-y-4">
             <div className="mb-3">
-                <label className="block text-sm text-gray-600 dark:text-gray-300 mb-1">Email</label>
+                <label className="block text-sm text-text-secondary mb-1">Email</label>
                 <input
-                    className="w-full border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                    className="w-full border border-border rounded-md px-3 py-2 bg-card text-text-base"
                     value={email}
                     onChange={(e) => { setEmail(e.target.value); setErr(""); }}
                     required
                 />
             </div>
             <div className="mb-4">
-                <label className="block text-sm text-gray-600 dark:text-gray-300 mb-1">Password</label>
+                <label className="block text-sm text-text-secondary mb-1">Password</label>
                 <input
                     type="password"
-                    className="w-full border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                    className="w-full border border-border rounded-md px-3 py-2 bg-card text-text-base"
                     value={pwd}
                     onChange={(e) => { setPwd(e.target.value); setErr(""); }}
                     required
@@ -113,14 +110,14 @@ const AuthForm = () => {
             {mode === "signin" ? (
                 <>
                     <button type="submit" disabled={isSubmitting} className="w-full bg-primary text-white px-4 py-2 rounded-md font-semibold disabled:opacity-50">Sign In</button>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mt-3 text-center">New here?{" "}
+                    <p className="text-sm text-text-secondary mt-3 text-center">New here?{" "}
                         <button type="button" onClick={() => { setMode("signup"); setErr(""); }} className="text-primary font-semibold underline">Create an account</button>
                     </p>
                 </>
             ) : (
                 <>
                     <button type="submit" disabled={isSubmitting} className="w-full bg-primary text-white px-4 py-2 rounded-md font-semibold disabled:opacity-50">Sign Up</button>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mt-3 text-center">Already have an account?{" "}
+                    <p className="text-sm text-text-secondary mt-3 text-center">Already have an account?{" "}
                         <button type="button" onClick={() => { setMode("signin"); setErr(""); }} className="text-primary font-semibold underline">Sign in</button>
                     </p>
                 </>

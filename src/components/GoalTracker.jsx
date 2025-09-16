@@ -1,30 +1,51 @@
-import { Target } from "lucide-react";
+import React from 'react';
+import { CircleGauge, CalendarIcon } from 'lucide-react';
 
 const GoalTracker = ({ goal }) => {
-  const { title, progress, deadline } = goal;
-  return (
-    <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
-      <div className="flex items-start space-x-4">
-        <Target className="h-6 w-6 text-primary mt-1" />
-        <div>
-          <div className="flex justify-between items-center mb-2">
-            <h4 className="font-bold text-gray-800">{title}</h4>
-            <span className="text-sm font-semibold text-primary">
-              {progress}%
-            </span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2.5 mb-3">
-            <div
-              className="bg-accent h-2.5 rounded-full transition-all duration-500"
-              style={{ width: `${progress}%` }}
-            ></div>
-          </div>
-          <p className="text-right text-xs text-gray-500">
-            Deadline: {deadline}
-          </p>
+    // Determine the color of the progress bar
+    const progressColor = goal.progress >= 100 ? "bg-green-600" : "bg-primary";
+
+    // Format deadline for display
+    const formattedDeadline = goal.deadline ? new Date(goal.deadline).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+    }) : 'No deadline';
+
+    return (
+        <div className="flex items-center gap-4 p-4 rounded-lg bg-card text-text-base border border-border shadow-sm">
+            {/* Goal Icon */}
+            <div className="flex-shrink-0">
+                <CircleGauge className="h-8 w-8 text-primary" />
+            </div>
+
+            {/* Goal Details */}
+            <div className="flex-grow">
+                <h4 className="font-semibold text-text-base">{goal.title}</h4>
+                <div className="flex items-center gap-2 text-sm text-text-secondary mt-1">
+                    <CalendarIcon className="h-4 w-4" />
+                    <span>{formattedDeadline}</span>
+                </div>
+            </div>
+
+            {/* Progress Bar & Status */}
+            <div className="flex-shrink-0 w-32 md:w-48">
+                <div className="relative pt-1">
+                    <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-medium text-primary">
+                            {goal.progress}%
+                        </span>
+                    </div>
+                    <div className="w-full bg-background rounded-full h-2.5">
+                        <div
+                            className={`h-2.5 rounded-full transition-all duration-500 ${progressColor}`}
+                            style={{ width: `${goal.progress}%` }}
+                        ></div>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 };
+
 export default GoalTracker;

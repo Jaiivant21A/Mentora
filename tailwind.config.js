@@ -1,13 +1,18 @@
+// tailwind.config.js
+
 /** @type {import('tailwindcss').Config} */
 export default {
-  darkMode: "class", // enable manual dark mode via .dark on <html> [web:211][web:208]
+  darkMode: "class",
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
       colors: {
-        primary: "#4F46E5", // Indigo
-        background: "#F9FAFB", // Cool Gray
-        accent: "#10B981", // Emerald
+        primary: 'var(--color-primary)',
+        background: 'var(--color-background)',
+        card: 'var(--color-card-background)',
+        'text-base': 'var(--color-text)',
+        'text-secondary': 'var(--color-text-secondary)',
+        border: 'var(--color-border)',
       },
     },
   },
