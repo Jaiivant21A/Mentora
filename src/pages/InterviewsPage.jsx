@@ -4,10 +4,23 @@ import { Trash2 } from "lucide-react";
 import { useAuth } from "../Context/AuthContext";
 import { supabase } from "../lib/supabaseClient";
 
+// The specializations we defined
 const types = [
-    { id: "behavioral", title: "Behavioral Interview", description: "Practice STAR responses." },
-    { id: "react", title: "React Technical", description: "Test React fundamentals." },
-    { id: "system", title: "System Design", description: "Discuss scalable designs." },
+  { 
+    id: "dsa", 
+    title: "Data Structures & Algorithms", 
+    description: "Test your foundation in core CS." 
+  },
+  { 
+    id: "frontend", 
+    title: "Web Development (Frontend)", 
+    description: "Practice React, JS, and CSS." 
+  },
+  { 
+    id: "system-design", 
+    title: "System Design", 
+    description: "Discuss scalable architectures." 
+  },
 ];
 
 export default function InterviewsPage() {
@@ -16,6 +29,11 @@ export default function InterviewsPage() {
     const [sessions, setSessions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [msg, setMsg] = useState("");
+    
+    // --- NEW STATE ---
+    // Tracks when we are calling the AI to prevent multiple clicks
+    const [isStarting, setIsStarting] = useState(false);
+    // -----------------
 
     useEffect(() => {
         const fetchSessions = async () => {
@@ -41,31 +59,60 @@ export default function InterviewsPage() {
         }
     }, [msg]);
 
+    // --- THIS FUNCTION IS NOW UPDATED ---
     const start = async (type) => {
         if (!user) {
             console.error("User not authenticated.");
             return;
         }
+        if (isStarting) return; // Prevent double-clicks
 
-        const { data, error } = await supabase
-            .from('interview_sessions')
-            .insert({
-                user_id: user.id,
-                type: type
-            })
-            .select()
-            .single();
+        setIsStarting(true);
+        setMsg("Generating your interview questions...");
 
-        if (error) {
-            console.error("Could not create interview session", error);
-            setMsg("Error: Could not create session.");
-            return;
-        }
-        
-        if (data) {
-            nav(`/interview/${data.id}?type=${type}`);
+        try {
+            // 1. Call the Edge Function to get AI-generated questions
+            const { data: functionData, error: functionError } = await supabase.functions.invoke(
+                'generate-questions', // The name of our function
+                { body: { type } }      // Pass the interview type
+            );
+
+            if (functionError) {
+                throw new Error(functionError.message);
+            }
+
+            // 2. Save the new session *with* the questions to the DB
+            const { data: sessionData, error: insertError } = await supabase
+                .from('interview_sessions')
+                .insert({
+                    user_id: user.id,
+                    type: type,
+                    questions: functionData.questions // Save the AI-generated questions
+                })
+                .select()
+                .single();
+
+            if (insertError) {
+                throw insertError;
+            }
+            
+            // 3. Navigate to the new session
+            if (sessionData) {
+                nav(`/interview/${sessionData.id}?type=${type}`);
+            }
+
+        } catch (error) {
+            console.error("Failed to start session:", error);
+            setMsg(`Error: ${error.message || "Could not start your session."}`);
+        } finally {
+            setIsStarting(false);
+            // Clear the "Generating..." message if no error occurred
+            if (!msg.startsWith("Error")) {
+                setTimeout(() => setMsg(""), 2000); // Clear generating message
+            }
         }
     };
+    // ------------------------------------
 
     const deleteSession = async (id) => {
         if (!confirm("Delete this session?")) return;
@@ -98,8 +145,13 @@ export default function InterviewsPage() {
                     <div key={t.id} className="bg-card p-6 rounded-lg shadow-md border border-border">
                         <h3 className="text-xl font-bold text-text-base">{t.title}</h3>
                         <p className="text-text-secondary mt-2 mb-4">{t.description}</p>
-                        <button onClick={() => start(t.id)} className="bg-primary text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">
-                            Start
+                        {/* --- THIS BUTTON IS NOW UPDATED --- */}
+                        <button 
+                          onClick={() => start(t.id)} 
+                          className="bg-primary text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+                          disabled={isStarting}
+                        >
+                          {isStarting ? "Generating..." : "Start"}
                         </button>
                     </div>
                 ))}
@@ -121,6 +173,7 @@ export default function InterviewsPage() {
                             <div className="min-w-0">
                                 <div className="font-semibold capitalize truncate text-text-base">{s.type}</div>
                                 <div className="text-sm text-text-secondary">
+                                    {/* We will add the score/feedback here later */}
                                     {s.completed_at ? "Completed" : "In progress"} •{" "}
                                     {new Date(s.created_at).toLocaleString()}
                                 </div>
