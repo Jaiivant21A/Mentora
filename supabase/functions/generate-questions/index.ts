@@ -8,15 +8,15 @@ import {
   HarmBlockThreshold,
 } from "https://esm.sh/@google/generative-ai@0.1.3";
 
-console.log("Function is cold-booting..."); // This log appears once when it wakes up
+console.log("Function is cold-booting...");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Helper function to create a prompt for the AI
-function createPrompt(type: string): string {
+// --- THIS FUNCTION IS NOW UPDATED ---
+function createPrompt(type: string, difficulty: string): string {
   let specialization = "Computer Science"; // Default
   if (type === "dsa") {
     specialization = "Data Structures and Algorithms";
@@ -25,26 +25,46 @@ function createPrompt(type: string): string {
   } else if (type === "system-design") {
     specialization = "System Design and Scalability";
   }
-  
+
+  // Define the mix of questions based on the chosen difficulty
+  let questionMix = "10 medium difficulty questions"; // Default
+  switch (difficulty) {
+    case 'easy':
+      questionMix = "7 easy questions and 3 medium questions";
+      break;
+    case 'medium':
+      questionMix = "5 medium questions and 5 hard questions";
+      break;
+    case 'hard':
+      questionMix = "10 hard questions";
+      break;
+  }
+
   return `
     You are an expert technical interviewer. 
     Generate 10 unique interview questions for a mid-level candidate 
     in the specialization of "${specialization}".
     
-    Return the questions as a JSON array of strings. 
-    Do not include any other text or explanation.
+    The 10 questions must have the following difficulty mix: ${questionMix}.
+    
+    Return the questions as a JSON array of objects.
+    Each object must have a "question" key (string) and a "difficulty" key (string: "easy", "medium", or "hard").
+    Ensure the "difficulty" key accurately reflects the question's difficulty.
+    
+    Return *only* the JSON array. Do not include any other text or explanation.
     
     Example format:
     [
-      "Question 1?",
-      "Question 2?",
+      { "question": "What is a hash map?", "difficulty": "easy" },
+      { "question": "Explain the trade-offs of B-trees.", "difficulty": "medium" },
       ...
     ]
   `;
 }
+// ------------------------------------
 
 serve(async (req) => {
-  console.log("Function invoked."); // This log appears every time
+  console.log("Function invoked.");
 
   if (req.method === "OPTIONS") {
     console.log("Handling OPTIONS request.");
@@ -53,8 +73,14 @@ serve(async (req) => {
 
   try {
     console.log("Attempting to parse request body...");
-    const { type } = await req.json();
-    console.log("Request body parsed. Type:", type);
+    // --- UPDATED: Now expects 'difficulty' ---
+    const { type, difficulty } = await req.json();
+    console.log(`Request body parsed. Type: ${type}, Difficulty: ${difficulty}`);
+    // ------------------------------------------
+
+    if (!type || !difficulty) {
+      throw new Error("Missing 'type' or 'difficulty' in request body.");
+    }
 
     console.log("Attempting to get API key...");
     const GOOGLE_API_KEY = Deno.env.get("GOOGLE_API_KEY");
@@ -78,7 +104,9 @@ serve(async (req) => {
     ];
     
     console.log("Creating prompt...");
-    const prompt = createPrompt(type);
+    // --- UPDATED: Pass difficulty to the prompt ---
+    const prompt = createPrompt(type, difficulty);
+    // ----------------------------------------------
     
     const chat = model.startChat({ safetySettings });
     console.log("Sending message to AI...");
@@ -92,6 +120,7 @@ serve(async (req) => {
     questionsJson = questionsJson.replace(/```json/g, "").replace(/```/g, "");
     
     console.log("Attempting to parse JSON...");
+    // This will now parse into an array of objects
     const questions = JSON.parse(questionsJson);
     console.log("JSON parsed successfully.");
 
@@ -101,7 +130,6 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    // This will now log the detailed error
     console.error("Error in try-catch block:", error.message);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

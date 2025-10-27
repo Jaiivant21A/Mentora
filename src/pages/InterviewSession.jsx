@@ -3,7 +3,6 @@ import { useNavigate, useSearchParams, useParams } from "react-router-dom";
 import { supabase } from '../lib/supabaseClient';
 import { PauseCircle, PlayCircle } from 'lucide-react';
 
-// --- NEW: Timer Component ---
 // A small helper component to format and display the time
 const Timer = ({ seconds, isPaused }) => {
   const mins = Math.floor(seconds / 60);
@@ -14,53 +13,54 @@ const Timer = ({ seconds, isPaused }) => {
     </div>
   );
 };
-// ----------------------------
 
-// Set the total time for the interview in seconds
+// Styles for the difficulty tags
+const difficultyStyles = {
+  easy: 'bg-green-100 text-green-800 border-green-200',
+  medium: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+  hard: 'bg-red-100 text-red-800 border-red-200',
+  default: 'bg-gray-100 text-gray-800 border-gray-200',
+};
+
 const TOTAL_TIME_SECONDS = 30 * 60; // 30 minutes
 
 export default function InterviewSession() {
     const { sessionId } = useParams();
     const [params] = useSearchParams();
     const type = params.get("type") || "behavioral";
+    const difficulty = params.get("difficulty") || "medium";
     
     const nav = useNavigate();
     const [session, setSession] = useState(null);
-    const [questions, setQuestions] = useState([]);
+    const [questions, setQuestions] = useState([]); 
     const [answers, setAnswers] = useState([]);
     const [idx, setIdx] = useState(0);
     const [loading, setLoading] = useState(true);
     
-    // --- UPDATED STATE ---
-    // 'ready' is the new "Start Interview" screen
     const [view, setView] = useState('loading'); 
     const [feedback, setFeedback] = useState(null);
     const [error, setError] = useState("");
     
-    // --- NEW: Timer State ---
+    // --- NEW: State to hold the final summary ---
+    const [summary, setSummary] = useState("");
+    // ------------------------------------------
+    
     const [timeLeft, setTimeLeft] = useState(TOTAL_TIME_SECONDS);
     const [isTimerRunning, setIsTimerRunning] = useState(false);
-    // -------------------------
 
-    // --- NEW: Timer Countdown Logic ---
     useEffect(() => {
-      // Only run the timer if it's running and time is left
       if (isTimerRunning && timeLeft > 0) {
         const timerId = setInterval(() => {
           setTimeLeft((prevTime) => prevTime - 1);
         }, 1000);
-
-        // Clear the interval on component unmount or when paused
         return () => clearInterval(timerId);
       }
       
-      // Auto-submit when time runs out
       if (isTimerRunning && timeLeft === 0) {
         setIsTimerRunning(false);
-        finish(); // Call the finish function automatically
+        finish(); 
       }
     }, [isTimerRunning, timeLeft]);
-    // ----------------------------------
 
     useEffect(() => {
         const fetchSession = async () => {
@@ -78,15 +78,13 @@ export default function InterviewSession() {
                 setSession(data);
                 
                 if (data.completed_at) {
-                    setFeedback(data.questions); 
+                    setFeedback(data.questions); // 'questions' col holds the feedback array
+                    setSummary(data.summary);   // Load the saved summary
                     setView('results');
                 } else {
-                    // --- UPDATED ---
-                    // Don't load questions yet, just set the view to 'ready'
                     setQuestions(data.questions || []); 
                     setAnswers(data.answers || Array(data.questions?.length || 0).fill(""));
-                    setView('ready'); // Show the "Start" screen
-                    // ----------------
+                    setView('ready');
                 }
             }
             setLoading(false);
@@ -109,51 +107,61 @@ export default function InterviewSession() {
         saveProgress(newAnswers);
     };
 
+    // --- UPDATED 'finish' function ---
     const finish = async () => {
-        if (view === 'grading') return; // Prevent multiple submissions
+        if (view === 'grading') return; 
         
         setView('grading'); 
-        setIsTimerRunning(false); // Stop the timer
+        setIsTimerRunning(false);
         setError("");
         await saveProgress(answers); 
 
         try {
-            // Determine the correct questions to send, handling both new and old formats
-            const questionsToSend = questions.map(q => q.question || q);
+            const questionStrings = questions.map(q => q.question);
 
+            // 1. Call the grading function
             const { data: functionData, error: functionError } = await supabase.functions.invoke(
                 'grade-answers',
-                { body: { questions: questionsToSend, answers } } 
+                { body: { questions: questionStrings, answers, difficulty } } 
             );
 
             if (functionError) throw functionError;
+            
+            // functionData now contains { feedback: [], summary: "..." }
 
-            const results = questionsToSend.map((q, i) => ({
+            // 2. Create the results array for the 'questions' column
+            const results = questionStrings.map((q, i) => ({
                 question: q,
                 answer: answers[i] || "No answer provided.",
+                difficulty: questions[i].difficulty,
                 good: functionData.feedback[i].good,
                 missing: functionData.feedback[i].missing,
             }));
 
+            // 3. Save everything to the database
             const { error: updateError } = await supabase
                 .from('interview_sessions')
                 .update({ 
                     completed_at: new Date(),
-                    questions: results 
+                    questions: results,           // Save the full feedback
+                    summary: functionData.summary // Save the new AI summary
                 })
                 .eq('id', sessionId);
 
             if (updateError) throw updateError;
 
+            // 4. Set state to show results
             setFeedback(results);
+            setSummary(functionData.summary);
             setView('results');
 
         } catch (err) {
             console.error("Failed to grade session:", err);
             setError("An error occurred while grading. Please try again.");
-            setView('answering'); // Go back to answering view on error
+            setView('answering');
         }
     };
+    // -----------------------------------
 
     const deleteSession = async () => {
         if (!confirm("Delete this session?")) return;
@@ -162,26 +170,35 @@ export default function InterviewSession() {
         nav("/interviews");
     };
 
-    // --- NEW: Function to start the interview ---
     const startInterview = () => {
       setView('answering');
       setIsTimerRunning(true);
     };
-    // ------------------------------------------
 
     if (view === 'loading') return <p className="text-text-base p-6">Loading session...</p>;
     
+    // --- UPDATED 'results' view ---
     if (view === 'results') {
-        // (This view remains the same as before)
         return (
             <div className="p-6">
-                <h1 className="text-3xl font-bold mb-2 capitalize text-text-base">Interview Feedback: {type}</h1>
-                <p className="text-text-secondary mb-6">Here's a breakdown of your performance from our AI mentor.</p>
+                <h1 className="text-3xl font-bold mb-2 capitalize text-text-base">Interview Feedback: {type} - {difficulty}</h1>
                 
+                {/* --- NEW: Display the AI Summary --- */}
+                <p className="text-lg text-primary font-semibold bg-primary/10 p-4 rounded-md mb-6">
+                    "{summary || 'Great work completing the session!'}"
+                </p>
+                {/* ------------------------------------ */}
+                
+                <h2 className="text-xl font-bold text-text-base mb-4">Detailed Breakdown</h2>
                 <div className="space-y-6">
                     {Array.isArray(feedback) && feedback.map((item, i) => (
                         <div key={i} className="bg-card border border-border rounded-lg p-4">
-                            <h3 className="font-semibold text-text-base mb-2">Q: {item.question}</h3>
+                            <div className="flex items-center gap-3 mb-2">
+                                <h3 className="font-semibold text-text-base">Q: {item.question}</h3>
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${difficultyStyles[item.difficulty] || difficultyStyles.default}`}>
+                                    {item.difficulty}
+                                </span>
+                            </div>
                             <p className="text-sm text-text-secondary p-3 bg-background rounded-md mb-3 whitespace-pre-wrap">
                                 <span className="font-semibold">Your answer:</span> {item.answer}
                             </p>
@@ -199,12 +216,12 @@ export default function InterviewSession() {
             </div>
         );
     }
+    // ---------------------------------
 
-    // --- NEW: The 'ready' screen ---
     if (view === 'ready') {
         return (
             <div className="p-6 text-center">
-                <h1 className="text-3xl font-bold mb-2 capitalize text-text-base">Interview: {type}</h1>
+                <h1 className="text-3xl font-bold mb-2 capitalize text-text-base">Interview: {type} - {difficulty}</h1>
                 <p className="text-text-secondary mb-4">You will have 30 minutes to answer 10 questions.</p>
                 <p className="text-text-secondary mb-8">The timer will start as soon as you begin.</p>
                 <button 
@@ -216,17 +233,23 @@ export default function InterviewSession() {
             </div>
         );
     }
-    // --------------------------------
 
-    // --- This is the 'answering' or 'grading' view ---
+    // --- 'answering' view ---
+    const currentQuestion = questions[idx];
+    const currentDifficulty = currentQuestion?.difficulty || 'medium';
+
     return (
         <div className="p-6">
             <div className="flex justify-between items-center mb-4">
                 <div>
                     <h1 className="text-2xl font-bold mb-1 capitalize text-text-base">Interview: {type}</h1>
-                    <p className="text-text-secondary">Question {idx + 1} of {questions.length}</p>
+                    <div className="flex items-center gap-3">
+                        <p className="text-text-secondary">Question {idx + 1} of {questions.length}</p>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${difficultyStyles[currentDifficulty]}`}>
+                            {currentDifficulty}
+                        </span>
+                    </div>
                 </div>
-                {/* --- NEW: Timer and Pause Button --- */}
                 <div className="flex items-center gap-4">
                     <Timer seconds={timeLeft} isPaused={!isTimerRunning} />
                     <button 
@@ -237,13 +260,12 @@ export default function InterviewSession() {
                         {isTimerRunning ? <PauseCircle className="text-text-secondary" /> : <PlayCircle className="text-text-secondary" />}
                     </button>
                 </div>
-                {/* --------------------------------- */}
             </div>
 
             {questions.length > 0 ? (
                 <>
                     <div className="bg-card border border-border rounded-lg p-4 mb-4">
-                        <p className="font-semibold mb-2 text-text-base">{questions[idx]?.question || questions[idx]}</p>
+                        <p className="font-semibold mb-2 text-text-base">{currentQuestion?.question}</p>
                         <textarea
                             className="w-full border border-border rounded-md p-3 min-h-[140px] bg-background text-text-base"
                             placeholder="Type your answer here..."

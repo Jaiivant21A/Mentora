@@ -15,39 +15,49 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// This prompt is more complex. It instructs the AI to act as a grader.
-function createGradingPrompt(questions: string[], answers: string[]): string {
+// --- THIS FUNCTION IS NOW UPDATED ---
+function createGradingPrompt(questions: string[], answers: string[], difficulty: string): string {
   // We format the Q&A pairs for the AI
   const qaPairs = questions.map((q, i) => `
     Question ${i + 1}: ${q}
     User's Answer ${i + 1}: ${answers[i] || "No answer provided."}
   `).join("\n");
 
+  // Define the summary based on difficulty
+  let summaryRequirement = `Finally, provide a single "summary" string. This should be a one-sentence acknowledgement based on the overall performance. For 'medium' or 'hard' interviews, be professional and encouraging (e.g., "Excellent work on these complex topics."). For 'easy' interviews, be more celebratory (e.g., "Great job, you've mastered the fundamentals!").`;
+
   return `
     You are an expert technical interviewer and mentor. 
-    A candidate has provided the following answers to a list of interview questions. 
+    A candidate has provided the following answers to a ${difficulty} difficulty interview.
     
-    Your task is to review each answer and provide constructive feedback.
+    Your task is to review each answer and provide constructive feedback, and then provide a final summary.
     
     Here are the questions and answers:
     ${qaPairs}
     
-    Please evaluate each answer and return your feedback as a JSON array of objects.
-    Each object in the array must have two keys: "good" and "missing".
+    Please evaluate each answer and return your response as a single JSON object.
+    This object must have two keys: "feedback" and "summary".
     
-    - "good": A short sentence on what was good about the answer.
-    - "missing": A short, constructive sentence on what was missing or could be improved.
+    1. The "feedback" key must be a JSON array of objects. Each object must have two keys:
+        - "good": A short sentence on what was good about the answer.
+        - "missing": A short, constructive sentence on what was missing or could be improved.
+    
+    2. The "summary" key must be a single string. ${summaryRequirement}
     
     Example response format:
-    [
-      { "good": "You correctly identified the concept.", "missing": "You could have also mentioned its performance implications." },
-      { "good": "Your explanation was clear and concise.", "missing": "Next time, try to provide a code example." },
-      ...
-    ]
+    {
+      "feedback": [
+        { "good": "You correctly identified the concept.", "missing": "You could have also mentioned its performance implications." },
+        { "good": "Your explanation was clear and concise.", "missing": "Next time, try to provide a code example." },
+        ...
+      ],
+      "summary": "Excellent work on these complex topics."
+    }
     
-    Return *only* the JSON array. Do not include any other text, markdown, or explanation.
+    Return *only* the JSON object. Do not include any other text, markdown, or explanation.
   `;
 }
+// ------------------------------------
 
 serve(async (req) => {
   console.log("Grading function invoked.");
@@ -59,12 +69,12 @@ serve(async (req) => {
 
   try {
     console.log("Attempting to parse request body...");
-    // We expect an object with 'questions' and 'answers' arrays
-    const { questions, answers } = await req.json();
+    // --- UPDATED: Now expects 'difficulty' ---
+    const { questions, answers, difficulty } = await req.json();
     console.log("Request body parsed.");
 
-    if (!questions || !answers || questions.length !== answers.length) {
-      throw new Error("Invalid request body. 'questions' and 'answers' arrays are required and must be the same length.");
+    if (!questions || !answers || !difficulty) {
+      throw new Error("Invalid request body. 'questions', 'answers', and 'difficulty' are required.");
     }
 
     console.log("Attempting to get API key...");
@@ -78,7 +88,6 @@ serve(async (req) => {
 
     console.log("Initializing Google AI client...");
     const genAI = new GoogleGenerativeAI(GOOGLE_API_KEY);
-    // Let's use the 'lite' model for speed on grading
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
     console.log("Google AI client initialized.");
 
@@ -90,7 +99,9 @@ serve(async (req) => {
     ];
     
     console.log("Creating grading prompt...");
-    const prompt = createGradingPrompt(questions, answers);
+    // --- UPDATED: Pass difficulty to the prompt ---
+    const prompt = createGradingPrompt(questions, answers, difficulty);
+    // ----------------------------------------------
     
     const chat = model.startChat({ safetySettings });
     console.log("Sending message to AI for grading...");
@@ -101,15 +112,15 @@ serve(async (req) => {
     let feedbackJson = response.text();
     console.log("Raw AI feedback:", feedbackJson);
     
-    // Clean up the AI's response
     feedbackJson = feedbackJson.replace(/```json/g, "").replace(/```/g, "");
     
     console.log("Attempting to parse JSON...");
-    const feedback = JSON.parse(feedbackJson);
+    // This will now parse into our { feedback: [], summary: "" } object
+    const gradedResponse = JSON.parse(feedbackJson);
     console.log("JSON parsed successfully.");
 
-    // Return the array of feedback objects
-    return new Response(JSON.stringify({ feedback }), {
+    // Return the full graded response object
+    return new Response(JSON.stringify(gradedResponse), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });

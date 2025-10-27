@@ -4,7 +4,6 @@ import { Trash2 } from "lucide-react";
 import { useAuth } from "../Context/AuthContext";
 import { supabase } from "../lib/supabaseClient";
 
-// The specializations we defined
 const types = [
   { 
     id: "dsa", 
@@ -23,16 +22,25 @@ const types = [
   },
 ];
 
+const difficulties = [
+    { id: 'easy', label: 'Easy', className: 'bg-green-600 hover:bg-green-700' },
+    { id: 'medium', label: 'Medium', className: 'bg-yellow-600 hover:bg-yellow-700' },
+    { id: 'hard', label: 'Hard', className: 'bg-red-600 hover:bg-red-700' },
+];
+
 export default function InterviewsPage() {
     const nav = useNavigate();
     const { user } = useAuth();
     const [sessions, setSessions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [msg, setMsg] = useState("");
+    const [isStarting, setIsStarting] = useState(false);
     
     // --- NEW STATE ---
-    // Tracks when we are calling the AI to prevent multiple clicks
-    const [isStarting, setIsStarting] = useState(false);
+    // This state controls which view to show:
+    // null = Show subject list
+    // {id, title, ...} = Show difficulty for that subject
+    const [selectedType, setSelectedType] = useState(null);
     // -----------------
 
     useEffect(() => {
@@ -41,7 +49,7 @@ export default function InterviewsPage() {
             setLoading(true);
             const { data, error } = await supabase
                 .from('interview_sessions')
-                .select('*')
+                .select('*, difficulty') 
                 .eq('user_id', user.id)
                 .order('created_at', { ascending: false });
 
@@ -59,46 +67,36 @@ export default function InterviewsPage() {
         }
     }, [msg]);
 
-    // --- THIS FUNCTION IS NOW UPDATED ---
-    const start = async (type) => {
-        if (!user) {
-            console.error("User not authenticated.");
-            return;
-        }
-        if (isStarting) return; // Prevent double-clicks
+    // This 'start' function is already perfect and needs no changes
+    const start = async (type, difficulty) => {
+        if (!user || isStarting) return;
 
         setIsStarting(true);
         setMsg("Generating your interview questions...");
 
         try {
-            // 1. Call the Edge Function to get AI-generated questions
             const { data: functionData, error: functionError } = await supabase.functions.invoke(
-                'generate-questions', // The name of our function
-                { body: { type } }      // Pass the interview type
+                'generate-questions', 
+                { body: { type, difficulty } }
             );
 
-            if (functionError) {
-                throw new Error(functionError.message);
-            }
+            if (functionError) throw new Error(functionError.message);
 
-            // 2. Save the new session *with* the questions to the DB
             const { data: sessionData, error: insertError } = await supabase
                 .from('interview_sessions')
                 .insert({
                     user_id: user.id,
                     type: type,
-                    questions: functionData.questions // Save the AI-generated questions
+                    difficulty: difficulty,
+                    questions: functionData.questions 
                 })
                 .select()
                 .single();
 
-            if (insertError) {
-                throw insertError;
-            }
+            if (insertError) throw insertError;
             
-            // 3. Navigate to the new session
             if (sessionData) {
-                nav(`/interview/${sessionData.id}?type=${type}`);
+                nav(`/interview/${sessionData.id}?type=${type}&difficulty=${difficulty}`);
             }
 
         } catch (error) {
@@ -106,17 +104,14 @@ export default function InterviewsPage() {
             setMsg(`Error: ${error.message || "Could not start your session."}`);
         } finally {
             setIsStarting(false);
-            // Clear the "Generating..." message if no error occurred
             if (!msg.startsWith("Error")) {
-                setTimeout(() => setMsg(""), 2000); // Clear generating message
+                setTimeout(() => setMsg(""), 2000);
             }
         }
     };
-    // ------------------------------------
 
     const deleteSession = async (id) => {
         if (!confirm("Delete this session?")) return;
-
         const { error } = await supabase
             .from('interview_sessions')
             .delete()
@@ -140,22 +135,56 @@ export default function InterviewsPage() {
                 Sharpen your skills and track past practice sessions.
             </p>
 
-            <div className="grid md:grid-cols-3 gap-6 mb-10">
-                {types.map((t) => (
-                    <div key={t.id} className="bg-card p-6 rounded-lg shadow-md border border-border">
-                        <h3 className="text-xl font-bold text-text-base">{t.title}</h3>
-                        <p className="text-text-secondary mt-2 mb-4">{t.description}</p>
-                        {/* --- THIS BUTTON IS NOW UPDATED --- */}
+            {/* --- NEW: Conditional Rendering --- */}
+            {!selectedType ? (
+                // === VIEW 1: SELECT SUBJECT ===
+                <div className="grid md:grid-cols-3 gap-6 mb-10">
+                    {types.map((t) => (
+                        <div key={t.id} className="bg-card p-6 rounded-lg shadow-md border border-border flex flex-col justify-between">
+                            <div>
+                                <h3 className="text-xl font-bold text-text-base">{t.title}</h3>
+                                <p className="text-text-secondary mt-2 mb-4">{t.description}</p>
+                            </div>
+                            <button 
+                                onClick={() => setSelectedType(t)} // Set the selected type
+                                className="bg-primary text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity w-full mt-2"
+                                disabled={isStarting}
+                            >
+                                Select
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                // === VIEW 2: SELECT DIFFICULTY ===
+                <div className="bg-card p-6 rounded-lg shadow-md border border-border mb-10">
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-xl font-bold text-text-base">
+                            Select Difficulty for: {selectedType.title}
+                        </h3>
                         <button 
-                          onClick={() => start(t.id)} 
-                          className="bg-primary text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
-                          disabled={isStarting}
+                            onClick={() => setSelectedType(null)} // Go back
+                            className="text-sm text-text-secondary hover:underline"
+                            disabled={isStarting}
                         >
-                          {isStarting ? "Generating..." : "Start"}
+                            (Change Subject)
                         </button>
                     </div>
-                ))}
-            </div>
+                    <div className="flex gap-4">
+                        {difficulties.map((d) => (
+                            <button
+                                key={d.id}
+                                onClick={() => start(selectedType.id, d.id)}
+                                className={`flex-1 text-white font-semibold px-4 py-3 rounded-lg ${d.className} disabled:opacity-50`}
+                                disabled={isStarting}
+                            >
+                                {isStarting ? "..." : d.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+            {/* ---------------------------------- */}
             
             <div className="h-6 mb-3">
                 {msg && <p className={`text-sm ${msg.startsWith('Error') ? 'text-red-600' : 'text-green-600'}`}>{msg}</p>}
@@ -171,15 +200,16 @@ export default function InterviewsPage() {
                     {sessions.map((s) => (
                         <div key={s.id} className="flex items-center justify-between bg-card border border-border rounded-md p-3">
                             <div className="min-w-0">
-                                <div className="font-semibold capitalize truncate text-text-base">{s.type}</div>
+                                <div className="font-semibold capitalize truncate text-text-base">
+                                    {s.type} - {s.difficulty || 'Not set'}
+                                </div>
                                 <div className="text-sm text-text-secondary">
-                                    {/* We will add the score/feedback here later */}
                                     {s.completed_at ? "Completed" : "In progress"} •{" "}
                                     {new Date(s.created_at).toLocaleString()}
                                 </div>
                             </div>
                             <div className="flex items-center gap-3">
-                                <Link className="text-primary font-semibold" to={`/interview/${s.id}?type=${s.type}`}>
+                                <Link className="text-primary font-semibold" to={`/interview/${s.id}?type=${s.type}&difficulty=${s.difficulty}`}>
                                     Open
                                 </Link>
                                 <button onClick={() => deleteSession(s.id)} className="p-2 rounded-md border border-border hover:bg-background" title="Delete session">
