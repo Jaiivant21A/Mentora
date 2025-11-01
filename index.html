@@ -7,6 +7,19 @@
     <title>Mentora</title>
   </head>
   <body>
+    <script>
+      // Instantly set theme before React loads to prevent flickering
+      (function() {
+        try {
+          var storedTheme = localStorage.getItem('theme');
+          if (storedTheme === 'dark') {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

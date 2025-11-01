@@ -1,8 +1,7 @@
 import { Routes, Route, Navigate, BrowserRouter as Router } from "react-router-dom";
 import { useAuth } from "./Context/AuthContext";
-import { ThemeProvider } from "./Context/ThemeContext.jsx"; // Import ThemeProvider
+import { ThemeProvider } from "./Context/ThemeContext.jsx";
 import Layout from "./components/Layout";
-import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
 
@@ -27,18 +26,15 @@ export default function App() {
 
   return (
     <Router>
-      {/* Wrap the entire app with ThemeProvider to give all components access to the theme context */}
       <ThemeProvider>
-        {/* Apply the global background and text colors to the highest-level container */}
         <div className="flex flex-col min-h-screen bg-background text-text-base">
-          {user && <Navbar />}
           <main className="flex-grow">
             <Routes>
-              {/* --- Public Routes --- */}
+              {/* Public Routes */}
               <Route path="/" element={<HomePage />} />
               <Route path="/auth" element={<AuthPage />} />
 
-              {/* --- Protected Routes --- */}
+              {/* Protected Routes */}
               <Route
                 element={
                   <ProtectedRoute>
@@ -59,7 +55,7 @@ export default function App() {
                 <Route path="/admin" element={<AdminPage />} />
               </Route>
 
-              {/* --- 404 Not Found Route --- */}
+              {/* 404 Not Found */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>

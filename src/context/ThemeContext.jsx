@@ -1,15 +1,19 @@
-// src/Context/ThemeContext.js
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-  // Get the theme preference from localStorage or default to 'light'
-  const [theme, setTheme] = useState(
-    () => localStorage.getItem('theme') || 'light'
-  );
+  const [theme, setTheme] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const storedTheme = localStorage.getItem('theme');
+      if (storedTheme) return storedTheme;
+      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        return 'dark';
+      }
+    }
+    return 'light';
+  });
 
-  // Update the theme on the <html> element and in localStorage
   useEffect(() => {
     const root = document.documentElement;
     if (theme === 'dark') {
@@ -18,16 +22,14 @@ export const ThemeProvider = ({ children }) => {
       root.classList.remove('dark');
     }
     localStorage.setItem('theme', theme);
-  }, [theme]); // Rerun this effect whenever the theme state changes
+  }, [theme]);
 
   const toggleTheme = () => {
-    setTheme((currentTheme) => (currentTheme === 'dark' ? 'light' : 'dark'));
+    setTheme((curr) => (curr === 'dark' ? 'light' : 'dark'));
   };
 
-  const value = { theme, toggleTheme };
-
   return (
-    <ThemeContext.Provider value={value}>
+    <ThemeContext.Provider value={{ theme, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );
@@ -36,7 +38,7 @@ export const ThemeProvider = ({ children }) => {
 export const useTheme = () => {
   const context = useContext(ThemeContext);
   if (!context) {
-    throw new Error('useTheme must be used within a ThemeProvider');
+    throw new Error('useTheme must be used within ThemeProvider');
   }
   return context;
 };
