@@ -1,5 +1,3 @@
-// src/Context/AuthContext.js
-
 import { useState, createContext, useContext, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
@@ -12,9 +10,7 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const fetchSession = async () => {
-      // First, get the current session immediately
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
       if (sessionError) {
         console.error("Error fetching session:", sessionError);
         setLoading(false);
@@ -26,7 +22,6 @@ export function AuthProvider({ children }) {
 
       if (currentUser) {
         try {
-          // Fetch the user's admin status
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('is_admin')
@@ -51,12 +46,11 @@ export function AuthProvider({ children }) {
 
     fetchSession();
 
-    // Set up the listener for future auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         const currentUser = session?.user ?? null;
         setUser(currentUser);
-        // Re-fetch admin status on sign-in or sign-out
+
         if (currentUser) {
           supabase
             .from('profiles')
@@ -78,7 +72,7 @@ export function AuthProvider({ children }) {
     );
 
     return () => subscription.unsubscribe();
-  }, []); // The empty dependency array is correct here
+  }, []);
 
   const signIn = async (credentials) => {
     const { data, error } = await supabase.auth.signInWithPassword(credentials);
@@ -92,6 +86,17 @@ export function AuthProvider({ children }) {
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
+    if (!error) {
+      setUser(null);
+      setIsAdmin(false);
+    }
+    return { error };
+  };
+
+  const signInWithGitHub = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'github',
+    });
     return { error };
   };
 
@@ -102,6 +107,7 @@ export function AuthProvider({ children }) {
     signIn,
     signUp,
     signOut,
+    signInWithGitHub,
   };
 
   return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
