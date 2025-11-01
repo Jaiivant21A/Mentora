@@ -11,9 +11,11 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@supabase/supabase-js": "^2.57.4",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.23.12",
+    "googleapis": "^164.1.0",
     "lucide-react": "^0.542.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
