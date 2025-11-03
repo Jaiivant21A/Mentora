@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { BotMessageSquare, Home } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { supabase } from "../lib/supabaseClient";
 
 const HEADLINE_OPTIONS = [
   "Aspiring Developer", "Student", "Working Professional", "Job Seeker", "Graduate"
@@ -68,23 +67,32 @@ const AuthForm = () => {
     setIsSubmitting(true);
     setErr("");
     try {
-      const { user, error: signUpError } = await signUp({ email, password: pwd });
-      if (signUpError) throw signUpError;
+      const { data, error: signUpError } = await signUp({
+        email,
+        password: pwd,
+        options: {
+          data: {
+            full_name: fullName,
+            age: age ? parseInt(age, 10) : null,
+            headline: headline,
+            experience_level: experienceLevel,
+            gender: gender
+          }
+        }
+      });
 
-      const { error: profileError } = await supabase.from('profiles').insert([{
-        id: user.id,
-        full_name: fullName,
-        is_admin: false,
-        age: age ? parseInt(age, 10) : null,
-        headline,
-        experience_level: experienceLevel,
-        gender
-      }]);
-
-      if (profileError) throw profileError;
+      if (signUpError) {
+        throw signUpError;
+      }
 
       alert("Success! Please check your email for a verification link.");
-      setMode("signin");
+
+      const { error: signInError } = await signIn({ email, password: pwd });
+
+      if (signInError) {
+        throw signInError;
+      }
+      
     } catch (error) {
       setErr(error.message);
     } finally {
@@ -117,6 +125,8 @@ const AuthForm = () => {
 
   return (
     <form onSubmit={submit} className="space-y-4">
+      {/* ... all your form inputs ... */}
+
       <div>
         <label className="block text-sm text-text-secondary mb-1">Email</label>
         <input
@@ -248,6 +258,7 @@ const AuthForm = () => {
         </p>
       )}
 
+      {/* --- THIS BLOCK IS NOW FIXED --- */}
       <p className="text-sm text-text-secondary mt-4 text-center">
         <Link
           to="/"

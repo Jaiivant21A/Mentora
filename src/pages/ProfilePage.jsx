@@ -21,7 +21,8 @@ const ProfilePage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [username, setUsername] = useState('');
   const [fullName, setFullName] = useState('');
-  const [avatarUrl, setAvatarUrl] = useState(null);
+  const [avatarUrl, setAvatarUrl] = useState(null); // This is for display
+  const [avatarPath, setAvatarPath] = useState(null); // This is the DB path
   const [avatarFile, setAvatarFile] = useState(null);
   const [age, setAge] = useState('');
   const [headline, setHeadline] = useState('');
@@ -53,11 +54,15 @@ const ProfilePage = () => {
           setHeadline(profileData.headline || '');
           setExperienceLevel(profileData.experience_level || '');
           setGender(profileData.gender || '');
+          
+          // --- FIX ---
+          // Store the path from the DB
+          setAvatarPath(profileData.avatar_url || null); 
 
           if (profileData.avatar_url) {
             const { data: publicUrlData } = supabase.storage
               .from('avatars')
-              .getPublicUrl(profileData.avatar_url);
+              .getPublicUrl(profileData.avatar_url); // Use the path here
             setAvatarUrl(publicUrlData.publicUrl || null);
           } else {
             setAvatarUrl(null);
@@ -87,16 +92,20 @@ const ProfilePage = () => {
     if (file) {
       setAvatarFile(file);
       const fileUrl = URL.createObjectURL(file);
-      setAvatarUrl(fileUrl);
+      setAvatarUrl(fileUrl); // Show a preview
     }
   };
 
+  // --- THIS FUNCTION IS NOW FIXED ---
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     setMessage('');
     try {
-      let updatedAvatarPath = avatarUrl;
+      // --- FIX ---
+      // Start with the existing path from the DB
+      let updatedAvatarPath = avatarPath; 
+
       if (avatarFile) {
         const fileExt = avatarFile.name.split('.').pop();
         const filePath = `${user.id}/avatar.${fileExt}`;
@@ -107,14 +116,15 @@ const ProfilePage = () => {
             upsert: true,
           });
         if (uploadError) throw uploadError;
-        updatedAvatarPath = filePath;
+        updatedAvatarPath = filePath; // Set the new path
       }
 
       const updates = {
-        id: user.id,
+        // --- FIX ---
+        // We removed 'id: user.id' - it's not needed for an update
         username,
         full_name: fullName,
-        avatar_url: updatedAvatarPath,
+        avatar_url: updatedAvatarPath, // Save the path, not the full URL
         age: age ? parseInt(age, 10) : null,
         headline,
         experience_level: experienceLevel,
@@ -122,9 +132,16 @@ const ProfilePage = () => {
         updated_at: new Date(),
       };
 
-      const { error } = await supabase.from('profiles').upsert(updates);
+      // --- FIX ---
+      // Changed .upsert() to .update() and added .eq()
+      const { error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', user.id); 
+
       if (error) throw error;
 
+      // Update the displayed avatar URL if a new one was uploaded
       if (avatarFile && updatedAvatarPath) {
         const { data: publicUrlData } = supabase.storage
           .from('avatars')
