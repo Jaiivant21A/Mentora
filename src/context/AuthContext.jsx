@@ -96,9 +96,24 @@ export function AuthProvider({ children }) {
   const signInWithGitHub = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'github',
+      options: {
+        redirectTo: window.location.origin + '/dashboard' // Send user to dashboard after login
+      }
     });
     return { error };
   };
+
+  // --- ADD THIS NEW FUNCTION ---
+  const signInWithGoogle = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin + '/dashboard' // Send user to dashboard after login
+      }
+    });
+    return { error };
+  };
+  // ------------------------------
 
   const value = {
     user,
@@ -108,6 +123,7 @@ export function AuthProvider({ children }) {
     signUp,
     signOut,
     signInWithGitHub,
+    signInWithGoogle, // --- Add to context value
   };
 
   return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;

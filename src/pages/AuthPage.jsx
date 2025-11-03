@@ -2,6 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { BotMessageSquare, Home } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+// --- NEW IMPORTS FOR ICONS ---
+import { FaGithub } from "react-icons/fa"; // For GitHub logo
+import { FcGoogle } from "react-icons/fc"; // For Google logo
+// -----------------------------
 
 const HEADLINE_OPTIONS = [
   "Aspiring Developer", "Student", "Working Professional", "Job Seeker", "Graduate"
@@ -41,7 +45,8 @@ const AuthPage = () => {
 };
 
 const AuthForm = () => {
-  const { signUp, signIn, signInWithGitHub } = useAuth();
+  const { signUp, signIn, signInWithGitHub, signInWithGoogle } = useAuth();
+  
   const [mode, setMode] = useState("signin");
   const [email, setEmail] = useState("");
   const [pwd, setPwd] = useState("");
@@ -123,10 +128,14 @@ const AuthForm = () => {
     if (error) setErr(error.message);
   };
 
+  const handleGoogleLogin = async () => {
+    setErr('');
+    const { error } = await signInWithGoogle();
+    if (error) setErr(error.message);
+  };
+
   return (
     <form onSubmit={submit} className="space-y-4">
-      {/* ... all your form inputs ... */}
-
       <div>
         <label className="block text-sm text-text-secondary mb-1">Email</label>
         <input
@@ -220,14 +229,27 @@ const AuthForm = () => {
         {mode === "signin" ? "Sign In" : "Sign Up"}
       </button>
 
-      <button
-        type="button"
-        onClick={handleGithubLogin}
-        className="w-full mt-3 bg-gray-800 text-white px-4 py-2 rounded-md hover:bg-gray-900 transition-colors"
-      >
-        Continue with GitHub
-      </button>
-
+      {/* --- NEW BUTTON LAYOUT --- */}
+      <div className="flex justify-center gap-4 mt-3">
+        <button
+          type="button"
+          onClick={handleGithubLogin}
+          className="w-12 h-12 flex items-center justify-center bg-gray-800 text-white rounded-full hover:bg-gray-900 transition-colors"
+          title="Sign in with GitHub"
+        >
+          <FaGithub size={24} />
+        </button>
+        <button
+          type="button"
+          onClick={handleGoogleLogin}
+          className="w-12 h-12 flex items-center justify-center bg-white rounded-full hover:bg-gray-100 transition-colors shadow-md"
+          title="Sign in with Google"
+        >
+          <FcGoogle size={24} />
+        </button>
+      </div>
+      {/* ------------------------- */}
+      
       {mode === "signin" ? (
         <p className="text-sm text-text-secondary mt-3 text-center">
           New here?{" "}
@@ -258,7 +280,6 @@ const AuthForm = () => {
         </p>
       )}
 
-      {/* --- THIS BLOCK IS NOW FIXED --- */}
       <p className="text-sm text-text-secondary mt-4 text-center">
         <Link
           to="/"
