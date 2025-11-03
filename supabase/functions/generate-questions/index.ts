@@ -83,7 +83,7 @@ serve(async (req) => {
     }
 
     console.log("Attempting to get API key...");
-    const GOOGLE_API_KEY = Deno.env.get("GOOGLE_API_KEY");
+    const GOOGLE_API_KEY = Deno.env.get("GOOGLE_API_KEY2");
     
     if (!GOOGLE_API_KEY) {
       console.error("Error: GOOGLE_API_KEY is not set or undefined.");
@@ -130,8 +130,9 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error("Error in try-catch block:", error.message);
-    return new Response(JSON.stringify({ error: error.message }), {
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    console.error("Error in try-catch block:", errorMessage);
+    return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });

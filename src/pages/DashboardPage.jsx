@@ -9,7 +9,7 @@ const STATIC_PERSONAS = [
     field: 'Data Structures & Algorithms',
     description: 'A computer science educator specializing in algorithm optimization.',
     initials: 'DW',
-    color: '3B82F6', // Blue
+    color: '3B82F6',
   },
   {
     id: 'web-choi',
@@ -17,7 +17,7 @@ const STATIC_PERSONAS = [
     field: 'Web Development',
     description: 'A senior full-stack engineer passionate about modern web development.',
     initials: 'AJ',
-    color: '10B981', // Green
+    color: '10B981', 
   },
   {
     id: 'sys-ramirez',
@@ -25,7 +25,7 @@ const STATIC_PERSONAS = [
     field: 'System Design',
     description: 'A principal systems architect experienced in designing scalable distributed systems.',
     initials: 'MC',
-    color: 'F59E0B', // Yellow
+    color: 'F59E0B',
   },
 ];
 
