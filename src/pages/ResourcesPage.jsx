@@ -94,7 +94,7 @@ export default function ResourcesPage() {
 
             <p className="text-text-secondary mb-8">
 
-                Search courses from Coursera, edX, and Udemy.
+                Search courses from Youtube & Google Books.
 
             </p>
 

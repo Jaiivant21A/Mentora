@@ -4,7 +4,7 @@ import { useParams } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
-// --- Curriculum Data (Same as before) ---
+// --- Curriculum Data (for "Study" Mode) ---
 const TOPIC_GUIDES = {
   dsa: {
     beginner: ['Arrays & Strings', 'Linked Lists', 'Stacks', 'Queues'],
@@ -26,22 +26,25 @@ const TOPIC_GUIDES = {
 const WELCOME_MESSAGE = {
   id: "asst_welcome_1",
   role: "assistant",
-  content: "Hello! I'm your mentor. To get started, please choose the level you'd like to focus on today."
+  content: "Hello! I'm your mentor. How can I help you today?"
 };
 
-// --- Helper Components (Same as before) ---
+// --- Helper Components (No Changes) ---
 function PathChoiceButtons({ onSelect }) {
   return (
     <div className="p-4">
+      <p className="text-sm font-semibold text-text-base mb-2">
+        Great! What level should we focus on?
+      </p>
       <div className="flex flex-wrap gap-2">
         <button onClick={() => onSelect('beginner')} className="px-3 py-1.5 bg-card text-text-secondary rounded-md text-sm border border-border hover:bg-border">
-          Beginner: Start from the basics
+          Beginner
         </button>
         <button onClick={() => onSelect('intermediate')} className="px-3 py-1.5 bg-card text-text-secondary rounded-md text-sm border border-border hover:bg-border">
-          Intermediate: Review and build
+          Intermediate
         </button>
         <button onClick={() => onSelect('advanced')} className="px-3 py-1.5 bg-card text-text-secondary rounded-md text-sm border border-border hover:bg-border">
-          Advanced: Show me complex topics
+          Advanced
         </button>
       </div>
     </div>
@@ -52,7 +55,7 @@ function TopicButtons({ topicKey, selectedLevel, onSelect }) {
   return (
     <div className="p-4">
       <p className="text-sm font-semibold text-text-base mb-2">
-        Great! Here are the {selectedLevel} topics. What would you like to learn?
+        Here are the {selectedLevel} topics. What's on your mind?
       </p>
       <div className="flex flex-wrap gap-2">
         {topics.map((topic) => (
@@ -64,25 +67,27 @@ function TopicButtons({ topicKey, selectedLevel, onSelect }) {
     </div>
   );
 }
-function LessonControlButtons({ onContinue, onAskFollowup, hasMoreSteps }) {
+function ModeSelectionButtons({ onSelectMode }) {
   return (
-    <div className="mt-4 flex gap-2">
-      {hasMoreSteps ? (
-        <button onClick={onContinue} className="flex-1 bg-primary text-white px-4 py-2 rounded-md">
-          Continue to next sub-topic
-        </button>
-      ) : (
-        <button className="flex-1 bg-card text-text-secondary px-4 py-2 rounded-md border border-border" disabled>
-          Lesson complete!
-        </button>
-      )}
-      <button onClick={onAskFollowup} className="flex-1 bg-card text-text-secondary px-4 py-2 rounded-md border border-border hover:bg-border">
-        Ask a follow-up question
+    <div className="p-4 flex flex-col md:flex-row gap-4">
+      <button 
+        onClick={() => onSelectMode('study')}
+        className="flex-1 p-4 bg-card border border-border rounded-lg text-left hover:bg-border"
+      >
+        <h3 className="font-semibold text-text-base">💬 Start a Study Session</h3>
+        <p className="text-sm text-text-secondary">Learn a new topic from scratch with a guided, conversational lesson.</p>
+      </button>
+      <button 
+        onClick={() => onSelectMode('advice')}
+        className="flex-1 p-4 bg-card border border-border rounded-lg text-left hover:bg-border"
+      >
+        <h3 className="font-semibold text-text-base">💡 Get Career Advice </h3>
+        <p className="text-sm text-text-secondary">Ask a specific career question (e.g., "How do I build a resume?, Give me a roadmap to develop my skills").</p>
       </button>
     </div>
   );
 }
-function FollowupInputForm({ onSubmit, onCancel, isReplying }) {
+function ChatInputForm({ onSubmit, isReplying, placeholder, onCancel = null }) {
   const [input, setInput] = useState("");
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -95,7 +100,7 @@ function FollowupInputForm({ onSubmit, onCancel, isReplying }) {
     <form onSubmit={handleSubmit} className="mt-4">
       <input
         className="w-full border border-border rounded-md px-3 py-2 bg-card text-text-base disabled:opacity-50"
-        placeholder={isReplying ? "Waiting for reply..." : "Ask your follow-up question..."}
+        placeholder={isReplying ? "Waiting for reply..." : placeholder}
         value={input}
         onChange={(e) => setInput(e.target.value)}
         disabled={isReplying}
@@ -104,39 +109,76 @@ function FollowupInputForm({ onSubmit, onCancel, isReplying }) {
         <button type="submit" className="bg-primary text-white px-4 py-2 rounded-md disabled:opacity-50" disabled={isReplying}>
           Send
         </button>
-        <button type="button" onClick={onCancel} className="bg-card text-text-secondary px-4 py-2 rounded-md border border-border hover:bg-border">
-          Cancel
-        </button>
+        {onCancel && (
+          <button type="button" onClick={onCancel} className="bg-card text-text-secondary px-4 py-2 rounded-md border border-border hover:bg-border">
+            Cancel
+          </button>
+        )}
       </div>
     </form>
   );
 }
-// ----------------------------------------
 
+// --- NEW: Helper to load state from sessionStorage ---
+const getInitialState = (personaId) => {
+  const storedState = sessionStorage.getItem(`chatState_${personaId}`);
+  if (storedState) {
+    try {
+      return JSON.parse(storedState);
+    } catch (e) {
+      console.error("Failed to parse stored chat state", e);
+      // Fallback to default if parsing fails
+    }
+  }
+  // Default fresh state
+  return {
+    messages: [WELCOME_MESSAGE],
+    chatMode: 'select',
+    studyState: 'level',
+    selectedLevel: null,
+  };
+};
+
+// ----------------------------------------
 
 export default function ChatPage() {
   const { personaId } = useParams();
   const { user } = useAuth();
+
+  // --- NEW: Initialize state lazily from getInitialState ---
+  const [messages, setMessages] = useState(() => getInitialState(personaId).messages);
+  const [chatMode, setChatMode] = useState(() => getInitialState(personaId).chatMode);
+  const [studyState, setStudyState] = useState(() => getInitialState(personaId).studyState);
+  const [selectedLevel, setSelectedLevel] = useState(() => getInitialState(personaId).selectedLevel);
+
+  // --- Other state (not saved) ---
   const [persona, setPersona] = useState(null);
-  const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isReplying, setIsReplying] = useState(false);
-
-  const [convoState, setConvoState] = useState('path_choice');
-  const [selectedLevel, setSelectedLevel] = useState(null);
-  const [currentLesson, setCurrentLesson] = useState(null);
   
   const messagesEndRef = useRef(null);
   const topicKey = useMemo(() => personaId?.split('-')[0], [personaId]);
-  
-  // --- NEW: Simplified key ---
-  const sessionLessonKey = `mentora_lesson_${personaId}`;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // --- NEW: Simplified Load Effect ---
+  // --- NEW: Effect to SAVE state to sessionStorage ---
+  useEffect(() => {
+    // We don't want to save while loading, as state might be in-flux
+    if (!loading && personaId) {
+      const stateToSave = {
+        messages,
+        chatMode,
+        studyState,
+        selectedLevel,
+      };
+      sessionStorage.setItem(`chatState_${personaId}`, JSON.stringify(stateToSave));
+    }
+  }, [messages, chatMode, studyState, selectedLevel, personaId, loading]);
+
+  // --- MODIFIED: This effect now ONLY loads persona data ---
+  // The chat state is handled by the initializers and the reset button.
   useEffect(() => {
     const fetchData = async () => {
       if (!user || !personaId) return;
@@ -145,65 +187,34 @@ export default function ChatPage() {
       const { data: personaData } = await supabase
         .from('personas').select('*').eq('id', personaId).single();
       setPersona(personaData);
-
-      const { data: messagesData } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('persona_id', personaId)
-        .order('created_at');
-
-      if (messagesData && messagesData.length > 0) {
-        setMessages(messagesData);
-        
-        // Restore lesson state from sessionStorage
-        const savedLesson = sessionStorage.getItem(sessionLessonKey);
-        if (savedLesson) {
-          setCurrentLesson(JSON.parse(savedLesson));
-          setConvoState('teaching_lesson'); // ALWAYS go to lesson controls
-        } else {
-          // Has history, but no lesson in progress. Go to topic choice.
-          setConvoState('topic_choice');
-        }
-
-      } else {
-        // No messages, this is a brand new chat
-        setMessages([WELCOME_MESSAGE]);
-        setConvoState('path_choice');
-      }
       
       setLoading(false);
     };
     fetchData();
-  }, [personaId, user, sessionLessonKey]);
-  // --- END OF FIX ---
+  }, [personaId, user]);
 
-  // --- NEW: Simplified Save Effect ---
-  // This effect now *only* worries about saving the lesson
-  useEffect(() => {
-    if (loading || !personaId) return; // Don't save while loading
-
-    if (currentLesson) {
-      // If a lesson is in progress, save it
-      sessionStorage.setItem(sessionLessonKey, JSON.stringify(currentLesson));
-    } else {
-      // If no lesson (e.g., it finished), remove it
-      sessionStorage.removeItem(sessionLessonKey);
-    }
-    
-  }, [currentLesson, loading, personaId, sessionLessonKey]);
-  // ---------------------------------
-
-  const callMentorBot = async (body) => {
+  // --- Helper to add a user message and save it ---
+  const addAndSaveUserMessage = async (content) => {
+    const userMessage = { role: "user", content, persona_id: personaId, user_id: user.id };
+    // This state update will trigger the save-to-storage effect
+    setMessages((prev) => [...prev, userMessage]); 
+    await supabase.from('messages').insert(userMessage);
+  };
+  
+  // --- Bot Call 1: "Advice" (RAG) ---
+  const callAdviceBot = async (query) => {
     setIsReplying(true);
-
-    let explanationResponse = "";
-    let conclusionResponse = null;
+    const assistantMessageId = `asst_rag_${Date.now()}`;
+    setMessages((prev) => [
+      ...prev,
+      { id: assistantMessageId, role: "assistant", content: "", persona_id: personaId, user_id: user.id }
+    ]);
+    let fullContent = "";
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mentor-bot`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/find-advice`,
         {
           method: 'POST',
           headers: {
@@ -211,131 +222,196 @@ export default function ChatPage() {
             'Authorization': `Bearer ${session?.access_token}`,
             'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
           },
-          body: JSON.stringify(body),
+          body: JSON.stringify({ query: query, personaId: personaId }),
         }
       );
 
-      if (!response.ok) {
+      if (!response.ok || !response.body) {
         const err = await response.json();
         throw new Error(err.error || `HTTP error! status: ${response.status}`);
       }
       
-      const data = await response.json();
-      explanationResponse = data.explanation;
-      conclusionResponse = data.conclusion;
-
-      const explanationMessage = {
-        id: `asst_ex_${Date.now()}`,
-        role: "assistant",
-        content: explanationResponse,
-        persona_id: personaId,
-        user_id: user.id
-      };
-      setMessages((prev) => [...prev, explanationMessage]);
-      await supabase.from('messages').insert(explanationMessage);
-
-      // Set the lesson state *first*
-      setCurrentLesson({
-        plan: data.lessonPlan,
-        step: data.currentStep,
-      });
-      
-      if (conclusionResponse) {
-        await new Promise(resolve => setTimeout(resolve, 500));
-        const conclusionMessage = {
-          id: `asst_con_${Date.now()}`,
-          role: "assistant",
-          content: conclusionResponse,
-          persona_id: personaId,
-          user_id: user.id
-        };
-        setMessages((prev) => [...prev, conclusionMessage]);
-        await supabase.from('messages').insert(conclusionMessage);
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        fullContent += chunk;
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMessageId ? { ...msg, content: msg.content + chunk } : msg
+          )
+        );
       }
-
-      // Now set the UI state
-      setConvoState('teaching_lesson');
-
     } catch (error) {
-      console.error("Error calling mentor-bot function:", error);
-      explanationResponse = `Sorry, I had trouble with that: ${error.message}`;
-      setMessages((prev) => [
-        ...prev,
-        { id: `asst_err_${Date.now()}`, role: "assistant", content: explanationResponse }
-      ]);
-      setConvoState('teaching_followup');
+      console.error("Error calling find-advice:", error);
+      fullContent = `Sorry, I had trouble with that: ${error.message}`;
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === assistantMessageId ? { ...msg, content: fullContent } : msg
+        )
+      );
     }
 
     setIsReplying(false);
+    await supabase.from('messages').insert({
+      role: 'assistant', content: fullContent, persona_id: personaId, user_id: user.id,
+    });
   };
+  
+  // --- Bot Call 2: "Study" (Conversational) ---
+  const callStudyBot = async (query) => {
+    setIsReplying(true);
+    const assistantMessageId = `asst_study_${Date.now()}`;
+    setMessages((prev) => [
+      ...prev,
+      { id: assistantMessageId, role: "assistant", content: "", persona_id: personaId, user_id: user.id }
+    ]);
+    let fullContent = "";
 
-  const addAndSaveUserMessage = async (content) => {
-    const userMessage = { role: "user", content, persona_id: personaId, user_id: user.id };
-    setMessages((prev) => [...prev, userMessage]);
-    await supabase.from('messages').insert(userMessage);
-  };
+    const historyToSend = messages.map(m => ({
+      role: m.role,
+      content: m.content
+    }));
 
-  const handlePathSelect = (level) => {
-    addAndSaveUserMessage(`I'd like to learn at the ${level} level.`);
-    setSelectedLevel(level);
-    setConvoState('topic_choice');
-  };
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/study-session`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({
+            history: historyToSend,
+            query: query,
+            personaId: personaId
+          }),
+        }
+      );
 
-  const handleTopicSelect = (topicName) => {
-    const query = `Teach me about ${topicName}`;
-    addAndSaveUserMessage(query);
-    callMentorBot({ query: query, topic: topicKey });
-  };
-
-  const handleContinueLesson = () => {
-    if (!currentLesson) return;
-    const nextStep = currentLesson.step + 1;
-    
-    if (nextStep >= currentLesson.plan.length) {
-      // Failsafe: lesson is over, clear state
-      setCurrentLesson(null);
-      setConvoState('topic_choice');
-      return;
+      if (!response.ok || !response.body) {
+        const err = await response.json();
+        throw new Error(err.error || `HTTP error! status: ${response.status}`);
+      }
+      
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        fullContent += chunk;
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMessageId ? { ...msg, content: msg.content + chunk } : msg
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Error calling study-session:", error);
+      fullContent = `Sorry, I had trouble with that: ${error.message}`;
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === assistantMessageId ? { ...msg, content: fullContent } : msg
+        )
+      );
     }
-    
-    const nextSubTopic = currentLesson.plan[nextStep];
-    addAndSaveUserMessage(`Continue with: ${nextSubTopic}`);
-    callMentorBot({
-      lessonPlan: currentLesson.plan,
-      currentStep: nextStep,
-      topic: topicKey,
+
+    setIsReplying(false);
+    await supabase.from('messages').insert({
+      role: 'assistant', content: fullContent, persona_id: personaId, user_id: user.id,
     });
   };
 
-  const handleAskFollowup = () => {
-    setConvoState('teaching_followup');
+  // --- State Handlers (No changes) ---
+  const handleSelectMode = (mode) => {
+    setChatMode(mode);
+    if (mode === 'advice') {
+      addAndSaveUserMessage("I'd like to get some career advice.");
+    }
+    if (mode === 'study') {
+      addAndSaveUserMessage("I'd like to start a study session.");
+      setStudyState('level');
+    }
+  };
+  
+  const handlePathSelect = (level) => {
+    addAndSaveUserMessage(`I'd like to learn at the ${level} level.`);
+    setSelectedLevel(level);
+    setStudyState('topic');
   };
 
-  const handleFollowupSubmit = (query) => {
+  const handleTopicSelect = (topicName) => {
+    const query = `Let's start by learning about ${topicName}.`;
     addAndSaveUserMessage(query);
-    // A follow-up is a one-off question. It *ends* the formal lesson.
-    setCurrentLesson(null);
-    callMentorBot({ query: query, topic: topicKey });
+    setStudyState('chat'); // Move to open chat
+    callStudyBot(query); // Call the conversational bot
   };
 
+  const handleStudySubmit = (query) => {
+    addAndSaveUserMessage(query);
+    callStudyBot(query);
+  };
+  
+  const handleAdviceSubmit = (query) => {
+    addAndSaveUserMessage(query);
+    callAdviceBot(query); // Call the RAG bot
+  };
+
+  // --- MODIFIED: handleResetChat now clears sessionStorage ---
   const handleResetChat = async () => {
     await supabase.from('messages').delete().eq('user_id', user.id).eq('persona_id', personaId);
-    sessionStorage.removeItem(sessionLessonKey); // Clear saved lesson
+    
+    // Clear the stored state
+    sessionStorage.removeItem(`chatState_${personaId}`);
+
+    // Manually reset the state to defaults
     setMessages([WELCOME_MESSAGE]);
-    setConvoState('path_choice');
+    setChatMode('select');
+    setStudyState('level');
     setSelectedLevel(null);
-    setCurrentLesson(null);
     setIsReplying(false);
   };
 
+  // --- Helper to determine what to show in the input area (No changes) ---
+  const renderInputArea = () => {
+    if (isReplying) return null; // No input while bot is replying
+
+    if (chatMode === 'select') {
+      return <ModeSelectionButtons onSelectMode={handleSelectMode} />;
+    }
+    
+    if (chatMode === 'study') {
+      if (studyState === 'level') {
+        return <PathChoiceButtons onSelect={handlePathSelect} />;
+      }
+      if (studyState === 'topic') {
+        return <TopicButtons topicKey={topicKey} selectedLevel={selectedLevel} onSelect={handleTopicSelect} />;
+      }
+      if (studyState === 'chat') {
+        return <ChatInputForm onSubmit={handleStudySubmit} isReplying={isReplying} placeholder="Ask a follow-up or say 'continue'..." />;
+      }
+    }
+    
+    if (chatMode === 'advice') {
+      return <ChatInputForm onSubmit={handleAdviceSubmit} isReplying={isReplying} placeholder="Ask a specific career question..." />;
+    }
+    
+    return null;
+  };
+
+  // --- Render Logic (No changes) ---
   if (loading) {
     return <p className="text-text-base">Loading conversation...</p>;
   }
   if (!persona) {
     return <p>Persona not found.</p>;
   }
-
-  const hasMoreSteps = currentLesson && (currentLesson.step < currentLesson.plan.length - 1);
 
   return (
     <div className="flex flex-col h-[calc(100vh-10rem)]">
@@ -375,47 +451,8 @@ export default function ChatPage() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* --- Conditional Input Area (This logic is now robust) --- */}
       <div className="mt-4">
-        {!isReplying && (
-          <>
-            {convoState === 'path_choice' && (
-              <PathChoiceButtons onSelect={handlePathSelect} />
-            )}
-            
-            {convoState === 'topic_choice' && (
-              <TopicButtons 
-                topicKey={topicKey} 
-                selectedLevel={selectedLevel} 
-                onSelect={handleTopicSelect} 
-              />
-            )}
-            
-            {convoState === 'teaching_lesson' && (
-              <LessonControlButtons 
-                onContinue={handleContinueLesson}
-                onAskFollowup={handleAskFollowup}
-                hasMoreSteps={hasMoreSteps}
-              />
-            )}
-
-            {convoState === 'teaching_followup' && (
-              <FollowupInputForm
-                onSubmit={handleFollowupSubmit}
-                onCancel={() => {
-                  // This logic is now safe.
-                  if (currentLesson) {
-                    setConvoState('teaching_lesson');
-                  } else {
-                    // This is the new safe fallback
-                    setConvoState('topic_choice');
-                  }
-                }}
-                isReplying={isReplying}
-              />
-            )}
-          </>
-        )}
+        {renderInputArea()}
       </div>
     </div>
   );
