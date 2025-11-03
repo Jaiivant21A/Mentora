@@ -1,32 +1,31 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import PersonaCard from "../components/PersonaCard.jsx";
 
-// Static data for the personas (DSA, Web Development, System Design)
+// --- NEW Updated Persona Data ---
 const STATIC_PERSONAS = [
   {
     id: 'dsa-narayanan',
-    name: 'Priya Narayanan',
-    description: 'A computer science educator specializing in Data Structures & Algorithms.',
-    initial_prompt:
-      "You are Priya Narayanan, a mentor who helps me strengthen my understanding of Data Structures and Algorithms through examples and explanations.",
-    image_url: 'https://ui-avatars.com/api/?name=PN&background=3B82F6&color=fff',
+    name: 'David Wallace',
+    field: 'Data Structures & Algorithms',
+    description: 'A computer science educator specializing in algorithm optimization.',
+    initials: 'DW',
+    color: '3B82F6', // Blue
   },
   {
     id: 'web-choi',
-    name: 'Daniel Choi',
-    description: 'A full-stack developer passionate about modern web development.',
-    initial_prompt:
-      "You are Daniel Choi, a senior web developer who guides me in learning modern frontend and backend concepts with React, Node.js, and best practices.",
-    image_url: 'https://ui-avatars.com/api/?name=DC&background=10B981&color=fff',
+    name: 'Alex Johnson',
+    field: 'Web Development',
+    description: 'A senior full-stack engineer passionate about modern web development.',
+    initials: 'AJ',
+    color: '10B981', // Green
   },
   {
     id: 'sys-ramirez',
-    name: 'Carlos Ramirez',
-    description: 'A systems architect experienced in designing scalable distributed systems.',
-    initial_prompt:
-      "You are Carlos Ramirez, a system design mentor who helps me understand architecture tradeoffs, scalability, and reliability principles.",
-    image_url: 'https://ui-avatars.com/api/?name=CR&background=F59E0B&color=fff',
+    name: 'Marcus Cole',
+    field: 'System Design',
+    description: 'A principal systems architect experienced in designing scalable distributed systems.',
+    initials: 'MC',
+    color: 'F59E0B', // Yellow
   },
 ];
 
@@ -41,27 +40,43 @@ export default function DashboardPage() {
           Choose a mentor persona to start your learning conversation.
         </p>
 
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-          {STATIC_PERSONAS.map((persona) => (
-            <div
-              key={persona.id}
-              className="bg-card rounded-lg shadow-md p-6 border border-border flex flex-col items-center text-center"
-            >
-              <img
-                src={persona.image_url}
-                alt={persona.name}
-                className="w-20 h-20 rounded-full mb-4 shadow-sm"
-              />
-              <h3 className="text-xl font-semibold mb-2 text-text-base">{persona.name}</h3>
-              <p className="text-text-secondary text-sm">{persona.description}</p>
-              <button
-                onClick={() => navigate(`/chat/${persona.id}`)}
-                className="mt-4 inline-block text-primary hover:underline font-medium"
+        {/* --- NEW Single-Column List Layout --- */}
+        <div className="mt-8 flex flex-col gap-6">
+          {STATIC_PERSONAS.map((persona) => {
+            const avatarUrl = `https://ui-avatars.com/api/?name=${persona.initials}&background=${persona.color}&color=fff&size=64&bold=true`;
+            
+            return (
+              <div
+                key={persona.id}
+                // --- NEW Card Design ---
+                className="bg-card rounded-lg shadow-md p-6 border border-border flex flex-row items-center gap-6"
               >
-                Start Chat
-              </button>
-            </div>
-          ))}
+                {/* Avatar */}
+                <img
+                  src={avatarUrl}
+                  alt={persona.name}
+                  className="w-16 h-16 rounded-full shadow-sm flex-shrink-0"
+                />
+                
+                {/* Text Content */}
+                <div className="flex-1">
+                  <h3 className="text-xl font-semibold text-text-base">{persona.name}</h3>
+                  <p className="text-sm text-text-base font-medium">
+                    <span className="text-text-secondary">Field:</span> {persona.field}
+                  </p>
+                  <p className="text-text-secondary text-sm mt-1">{persona.description}</p>
+                </div>
+
+                {/* Button */}
+                <button
+                  onClick={() => navigate(`/chat/${persona.id}`)}
+                  className="ml-auto text-primary hover:underline font-medium px-4 py-2"
+                >
+                  Start Chat
+                </button>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
