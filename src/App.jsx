@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate, BrowserRouter as Router } from "react-router-dom";
-import { useAuth } from "./Context/AuthContext";
-import { ThemeProvider } from "./Context/ThemeContext.jsx";
+import { useAuth } from "./context/AuthContext";
+import { ThemeProvider } from "./context/ThemeContext.jsx";
 import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
