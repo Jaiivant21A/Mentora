@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth } from '../Context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
 
 const SignUp = () => {

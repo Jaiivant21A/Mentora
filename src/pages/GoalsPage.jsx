@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import GoalTracker from "../components/GoalTracker";
 import { supabase } from "../lib/supabaseClient";
-import { useAuth } from "../Context/AuthContext";
+import { useAuth } from "../context/AuthContext";
 
 // (Helper functions remain the same as they are not related to styling)
 const PREFS_KEY = "mentora-goals-prefs";
