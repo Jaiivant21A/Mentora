@@ -44,12 +44,10 @@ const HomePage = () => {
             {/* Hero Section */}
             <main className="text-center py-20 md:py-32 px-4">
                 <h1 className="text-4xl md:text-6xl font-extrabold text-text-base leading-tight">
-                    Your AI Mentor for Every Career Goal
+                    Your AI Mentor for a Career in Tech
                 </h1>
                 <p className="mt-4 text-lg md:text-xl text-text-secondary max-w-3xl mx-auto">
-                    Get personalized guidance, practice for interviews, find the best
-                    courses, and achieve your professional ambitions with AI-powered
-                    personas.
+                    Get personalized guidance, practice technical interviews, and find curated resources to advance your tech career.
                 </p>
                 <Link
                     to="/dashboard"
@@ -66,30 +64,28 @@ const HomePage = () => {
                         <BotMessageSquare className="h-12 w-12 text-primary mx-auto mb-4" />
                         <h3 className="text-xl font-bold mb-2">Expert Personas</h3>
                         <p className="text-text-secondary">
-                            Chat with AI mentors from any field—from law to computer science.
+                            Get insights from AI mentors specializing in core computer science topics and tech industry careers.
                         </p>
                     </div>
                     <div>
                         <GraduationCap className="h-12 w-12 text-primary mx-auto mb-4" />
                         <h3 className="text-xl font-bold mb-2">Find Courses</h3>
                         <p className="text-text-secondary">
-                            Discover top courses from Coursera, edX, and Udemy tailored to
-                            you.
+                            Discover targeted video tutorials from YouTube and in-depth guides from Google Books, curated for your learning path.
                         </p>
                     </div>
                     <div>
                         <Mic className="h-12 w-12 text-primary mx-auto mb-4" />
                         <h3 className="text-xl font-bold mb-2">Mock Interviews</h3>
                         <p className="text-text-secondary">
-                            Practice behavioral and technical interviews with an AI hiring
-                            manager.
+                            Practice technical interviews focused on CS domains and receive instant, detailed feedback to improve your skills.
                         </p>
                     </div>
                     <div>
                         <Target className="h-12 w-12 text-primary mx-auto mb-4" />
                         <h3 className="text-xl font-bold mb-2">Goal Tracking</h3>
                         <p className="text-text-secondary">
-                            Set and track your SMART goals to stay motivated and accountable.
+                            Set and manage your personal learning goals and deadlines to stay on track and motivated.
                         </p>
                     </div>
                 </div>
